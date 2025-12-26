@@ -1,0 +1,19 @@
+/* TVDetails inherits from MovieDetails styles */
+@import url('../MovieDetails/MovieDetails.css');
+
+.tv-details {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  padding-top: 70px;
+}
+
+.meta-seasons,
+.meta-episodes {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.details-creators {
+  margin-top: 1.5rem;
+  color: var(--text-secondary);
+}

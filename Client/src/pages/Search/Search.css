@@ -1,0 +1,173 @@
+/* Search Page Styles */
+
+.search-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  padding: 90px 2rem 3rem;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.search-header {
+  margin-bottom: 1rem;
+}
+
+.search-header h1 {
+  font-size: 1.75rem;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.search-query {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.result-count {
+  display: inline-block;
+  margin-top: 0.25rem;
+  color: var(--accent-primary);
+  font-size: 0.85rem;
+}
+
+/* Filter Tabs */
+.search-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 0.5rem 1.25rem;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.filter-btn.active {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+/* Search Results Container */
+.search-results {
+  margin-top: 0;
+}
+
+/* Results Grid */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Person Result Card */
+.person-result {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.person-result:hover {
+  transform: translateY(-5px);
+}
+
+.person-result img {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+}
+
+.person-info {
+  padding: 1rem;
+}
+
+.person-info strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.person-info span {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 3rem;
+  padding: 1rem;
+}
+
+.pagination button {
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  color: var(--text-secondary);
+}
+
+/* Empty States */
+.no-results,
+.no-query {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.no-results h2,
+.no-query h2 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.no-results p,
+.no-query p {
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .search-page {
+    padding: 90px 1rem 2rem;
+  }
+
+  .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+  }
+}

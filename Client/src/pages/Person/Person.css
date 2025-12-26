@@ -1,0 +1,165 @@
+/* Person Page Styles */
+
+.person-page {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  padding: 150px 2rem 3rem;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.person-loading {
+  display: flex;
+  gap: 2rem;
+  padding: 100px 2rem;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.skeleton-poster {
+  width: 300px;
+  height: 450px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.skeleton-content {
+  flex: 1;
+}
+
+.skeleton-title {
+  height: 40px;
+  width: 50%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-text {
+  height: 20px;
+  margin-bottom: 0.5rem;
+}
+
+.person-content {
+  display: flex;
+  gap: 2.5rem;
+}
+
+/* Sidebar */
+.person-sidebar {
+  flex-shrink: 0;
+  width: 300px;
+}
+
+.person-photo {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.person-facts {
+  margin-top: 2rem;
+}
+
+.person-facts h3 {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fact {
+  margin-bottom: 1.25rem;
+}
+
+.fact strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.fact span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Main Content */
+.person-main {
+  flex: 1;
+}
+
+.person-name {
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+}
+
+.person-bio {
+  margin-bottom: 2.5rem;
+}
+
+.person-bio h3 {
+  font-size: 1.3rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.person-bio p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.read-more {
+  background: none;
+  border: none;
+  color: var(--accent-primary);
+  cursor: pointer;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+  padding: 0;
+}
+
+.read-more:hover {
+  text-decoration: underline;
+}
+
+/* Known For */
+.known-for-section h3 {
+  font-size: 1.3rem;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.known-for-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .person-page {
+    padding: 130px 1rem 2rem;
+  }
+
+  .person-content {
+    flex-direction: column;
+  }
+
+  .person-sidebar {
+    width: 100%;
+    max-width: 250px;
+    margin: 0 auto;
+  }
+
+  .person-name {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .known-for-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}

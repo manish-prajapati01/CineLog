@@ -1,0 +1,104 @@
+/* RatingCircle Styles */
+
+.rating-circle-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-dark);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.rating-svg {
+  position: absolute;
+  transform: rotate(-90deg);
+}
+
+.rating-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.rating-progress {
+  fill: none;
+  transition: stroke-dashoffset 1s ease-out;
+}
+
+/* Color variants */
+.rating-circle-wrapper.excellent .rating-progress {
+  stroke: #21d07a;
+}
+
+.rating-circle-wrapper.good .rating-progress {
+  stroke: #d2d531;
+}
+
+.rating-circle-wrapper.average .rating-progress {
+  stroke: #d2d531;
+}
+
+.rating-circle-wrapper.poor .rating-progress {
+  stroke: #db2360;
+}
+
+/* Rating value */
+.rating-value {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+.small .rating-value {
+  font-size: 11px;
+}
+
+.medium .rating-value {
+  font-size: 15px;
+}
+
+.large .rating-value {
+  font-size: 22px;
+}
+
+.rating-number {
+  line-height: 1;
+}
+
+.rating-percent {
+  font-size: 0.5em;
+  margin-left: 1px;
+  color: var(--color-text-muted);
+}
+
+/* Glow effect on hover */
+.rating-circle-wrapper.excellent:hover {
+  box-shadow: 0 0 15px rgba(33, 208, 122, 0.4);
+}
+
+.rating-circle-wrapper.good:hover {
+  box-shadow: 0 0 15px rgba(210, 213, 49, 0.4);
+}
+
+.rating-circle-wrapper.poor:hover {
+  box-shadow: 0 0 15px rgba(219, 35, 96, 0.4);
+}
+
+/* Animation */
+@keyframes ratingAppear {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.rating-circle-wrapper {
+  animation: ratingAppear 0.5s ease-out;
+}

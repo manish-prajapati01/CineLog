@@ -1,0 +1,120 @@
+/* Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* App Layout */
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding-top: 60px; /* Navbar height */
+}
+
+/* Auth Layout */
+.auth-layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-primary);
+}
+
+/* Global Loader */
+.global-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loader-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--color-accent-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ant Design Overrides for Dark Theme */
+.ant-message {
+  z-index: 10000 !important;
+}
+
+.ant-message-notice-content {
+  background: var(--color-bg-elevated) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-xl) !important;
+  color: var(--color-text-primary) !important;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif !important;
+}
+
+button {
+  box-shadow: none !important;
+  height: 45px !important;
+  border-radius: 2px !important;
+}
+input:not(.navbar-search input),
+select,
+textarea {
+  height: 40px !important;
+  width: 100% !important;
+  border: 1px solid #6d6d6d !important;
+  padding-left: 20px !important;
+  border-radius: 2px !important;
+}
+input:not(.navbar-search input):focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border: 1px solid #303030 !important;
+  box-shadow: none !important;
+}
+.ant-form-item {
+  margin-top: 0px !important;
+}
+.ant-form-item-label {
+  padding: 0px !important;
+}
+svg {
+  cursor: pointer;
+}
+
+table {
+  border: 1px solid #c0c0c0 !important;
+}
+.ant-select-selector {
+  border: 2px #6d6d6d !important;
+  border-radius: 2px !important;
+  height: 40px !important;
+}
+.ant-select-selector:hover {
+  border: 1px #303030 !important;
+  box-shadow: none !important;
+  height: 40px !important;
+}
+
+select .ant-select-selector input {
+  height: 40px !important;
+  border: none !important;
+}
