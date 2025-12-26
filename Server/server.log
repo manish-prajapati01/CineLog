@@ -1,0 +1,47 @@
+
+🎬 Movie World Server running on http://localhost:5000
+📡 API Endpoints:
+   - Auth:      /api/auth
+   - Movies:    /api/movies
+   - TV Shows:  /api/tv
+   - Search:    /api/search
+   - Ratings:   /api/ratings
+   - Reviews:   /api/reviews
+   - Watchlist: /api/watchlist
+
+Mongo DB connected successfully
+GET /api/movies/indian/all
+[TMDB] Fetching: /discover/movie Params: {"page":1,"with_original_language":"hi|ta|te|ml|kn|bn|mr","primary_release_date.lte":"2025-12-26","sort_by":"primary_release_date.desc"}
+[TMDB] Response IDs: 1603844,1601826,1601791,1601310,1588434
+GET /api/movies/indian/all
+[TMDB] Fetching: /discover/movie Params: {"page":2,"with_original_language":"hi|ta|te|ml|kn|bn|mr","primary_release_date.lte":"2025-12-26","sort_by":"primary_release_date.desc"}
+TMDB API Error: /discover/movie read ECONNRESET
+GET /api/movies/popular/indian
+[TMDB] Fetching: /discover/movie Params: {"page":1,"with_original_language":"hi|ta|te|ml|kn|bn|mr","primary_release_date.lte":"2025-12-26","sort_by":"popularity.desc","vote_count.gte":50,"vote_average.gte":5}
+[TMDB] Response IDs: 1083637,1291608,1166133,1186350,20453
+GET /api/movies/popular/indian
+GET /api/movies/trending/india
+[TMDB] Fetching: /movie/now_playing Params: {"region":"IN"}
+GET /api/tv/popular/indian
+[TMDB] Fetching: /discover/tv Params: {"page":1,"with_original_language":"hi|ta|te|ml|kn|bn","first_air_date.lte":"2025-12-26","sort_by":"popularity.desc","vote_count.gte":20,"vote_average.gte":5}
+GET /api/movies/popular/hollywood
+[TMDB] Fetching: /discover/movie Params: {"page":1,"with_original_language":"en","primary_release_date.lte":"2025-12-26","sort_by":"popularity.desc","vote_count.gte":500,"vote_average.gte":6}
+GET /api/tv/popular/hollywood
+[TMDB] Fetching: /discover/tv Params: {"page":1,"with_original_language":"en","first_air_date.lte":"2025-12-26","sort_by":"popularity.desc","vote_count.gte":300,"vote_average.gte":6.5}
+GET /api/movies/popular/indian
+[TMDB] Response IDs: 83533,1084242,1228246,1259102,1291608
+[TMDB] Fetching: /trending/movie/week Params: {}
+[TMDB] Response IDs: 83533,1084242,425274,812583,798645
+[TMDB] Response IDs: 15226,111453,113218,66465,60550
+[TMDB] Response IDs: 66732,200875,106379,1622,79744
+GET /api/movies/popular/hollywood
+GET /api/tv/popular/indian
+GET /api/tv/popular/hollywood
+[TMDB] Response IDs: 83533,1084242,982843,1228246,812583
+[TMDB] Fetching: /discover/movie Params: {"page":1,"with_original_language":"hi","primary_release_date.gte":"2025-09-27","sort_by":"popularity.desc"}
+[TMDB] Response IDs: 1291608,1415974,1196364,656908,1352528
+[TMDB] Fetching: /discover/movie Params: {"page":1,"with_original_language":"ta","primary_release_date.gte":"2025-09-27","sort_by":"popularity.desc"}
+[TMDB] Response IDs: 1561955,1310458,1250508,1489510,985354
+[TMDB] Fetching: /discover/movie Params: {"page":1,"with_original_language":"te","primary_release_date.gte":"2025-09-27","sort_by":"popularity.desc"}
+[TMDB] Response IDs: 1511417,1022453,1381405,1407437,1372588
+GET /api/movies/trending/india
