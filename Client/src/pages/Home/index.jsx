@@ -99,7 +99,7 @@ const Home = () => {
         <div className='hero-overlay' />
         <div className='hero-content'>
           <h1 className='hero-title'>
-            Welcome to <span className='text-gradient'>Movie World</span>
+            Welcome to <span className='text-gradient'>CineLog</span>
           </h1>
           <p className='hero-subtitle'>
             Millions of movies, TV shows and people to discover. Explore now.

@@ -1,6 +1,6 @@
 /**
  * App - Main Application Component
- * Movie World Complete Redesign
+ * CineLog Complete Redesign
  */
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';

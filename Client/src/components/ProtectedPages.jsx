@@ -41,7 +41,7 @@ function ProtectedPage({ children }) {
             navigate('/');
           }}
         >
-          Movie World
+          CineLog
         </span>
         <div className='bg-white rounded px-5 py-2 flex gap-2 items-center'>
           <svg

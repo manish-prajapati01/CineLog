@@ -1,5 +1,5 @@
 /**
- * Movie World - Server Entry Point
+ * CineLog - Server Entry Point
  * Complete redesign with TMDB integration
  */
 
@@ -48,7 +48,7 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
-    message: "Movie World API is running",
+    message: "CineLog API is running",
     timestamp: new Date().toISOString(),
   });
 });
