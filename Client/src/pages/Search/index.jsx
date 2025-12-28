@@ -2,7 +2,7 @@
  * Search - Search results page
  */
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { MovieCard, MovieGridSkeleton } from '../../components';
 import searchService from '../../services/searchService';
 import './Search.css';
@@ -66,26 +66,28 @@ const Search = () => {
   ];
 
   return (
-    <div className='search-page'>
-      <div className='search-header'>
-        <h1>Search Results</h1>
-        {query && <p className='search-query'>for "{query}"</p>}
-        {totalResults > 0 && (
-          <span className='result-count'>{totalResults} results found</span>
-        )}
-      </div>
+    <div className='search-container'>
+      <div className='search-page'>
+        <div className='search-header'>
+          <h1>Search Results</h1>
+          {query && <p className='search-query'>for &quot;{query}&quot;</p>}
+          {totalResults > 0 && (
+            <span className='result-count'>{totalResults} results found</span>
+          )}
+        </div>
 
-      {/* Filter Tabs */}
-      <div className='search-filters'>
-        {filterButtons.map((btn) => (
-          <button
-            key={btn.key}
-            className={`filter-btn ${type === btn.key ? 'active' : ''}`}
-            onClick={() => handleTypeChange(btn.key)}
-          >
-            {btn.label}
-          </button>
-        ))}
+        {/* Filter Tabs */}
+        <div className='search-filters'>
+          {filterButtons.map((btn) => (
+            <button
+              key={btn.key}
+              className={`filter-btn ${type === btn.key ? 'active' : ''}`}
+              onClick={() => handleTypeChange(btn.key)}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Results */}
@@ -99,7 +101,12 @@ const Search = () => {
                 // Handle person results differently
                 if (item.media_type === 'person' || type === 'person') {
                   return (
-                    <div key={item.id} className='person-result'>
+                    <Link
+                      key={item.id}
+                      to={`/person/${item.id}`}
+                      className='person-result'
+                      style={{ textDecoration: 'none' }}
+                    >
                       <img
                         src={
                           item.profile_path
@@ -112,7 +119,7 @@ const Search = () => {
                         <strong>{item.name}</strong>
                         <span>{item.known_for_department}</span>
                       </div>
-                    </div>
+                    </Link>
                   );
                 }
                 return (
@@ -183,7 +190,7 @@ const Search = () => {
         ) : (
           <div className='no-query'>
             <h2>Search for movies, TV shows, and people</h2>
-            <p>Use the search bar above to find what you're looking for</p>
+            <p>Use the search bar above to find what you&apos;re looking for</p>
           </div>
         )}
       </div>

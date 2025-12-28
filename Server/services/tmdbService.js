@@ -81,367 +81,9 @@ const getImageUrl = (path, type = "poster", size = "medium") => {
   return `${TMDB_IMAGE_BASE}/${IMAGE_SIZES[type]?.[size] || "original"}${path}`;
 };
 
-// ============ MOVIE ENDPOINTS ============
+const omdbService = require("./omdbService");
 
-const getTrendingMovies = async (timeWindow = "week") => {
-  const data = await tmdbRequest(`/trending/movie/${timeWindow}`);
-  return data.results;
-};
-
-const getPopularMovies = async (page = 1) => {
-  const data = await tmdbRequest("/movie/popular", { page });
-  return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
-  };
-};
-
-const getNowPlayingMovies = async (page = 1) => {
-  const data = await tmdbRequest("/movie/now_playing", { page });
-  return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
-  };
-};
-
-const getUpcomingMovies = async (page = 1) => {
-  const data = await tmdbRequest("/movie/upcoming", { page });
-  return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
-  };
-};
-
-const getTopRatedMovies = async (page = 1) => {
-  const data = await tmdbRequest("/movie/top_rated", { page });
-  return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
-  };
-};
-
-const getMovieDetails = async (movieId) => {
-  return await tmdbRequest(`/movie/${movieId}`, {
-    append_to_response: "credits,videos,recommendations,similar,release_dates",
-  });
-};
-
-const getMovieCredits = async (movieId) => {
-  return await tmdbRequest(`/movie/${movieId}/credits`);
-};
-
-const getSimilarMovies = async (movieId) => {
-  return await tmdbRequest(`/movie/${movieId}/similar`);
-};
-
-const getMovieVideos = async (movieId) => {
-  return await tmdbRequest(`/movie/${movieId}/videos`);
-};
-
-const getMoviesByGenre = async (genreId, page = 1) => {
-  const data = await tmdbRequest("/discover/movie", {
-    with_genres: genreId,
-    page,
-    sort_by: "popularity.desc",
-  });
-  return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
-  };
-};
-
-const searchMovies = async (query, page = 1) => {
-  const data = await tmdbRequest("/search/movie", { query, page });
-  return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
-  };
-};
-
-const getMovieGenres = async () => {
-  const data = await tmdbRequest("/genre/movie/list");
-  return data.genres;
-};
-
-// ============ INDIA-SPECIFIC ENDPOINTS ============
-
-// Indian languages for filtering (Hindi, Tamil, Telugu, Malayalam, Kannada, Bengali, Marathi)
-const INDIAN_LANGUAGES = ["hi", "ta", "te", "ml", "kn", "bn", "mr", "pa", "gu"];
-
-/**
- * Helper: Check if content is Indian based on language
- */
-const isIndianContent = (item) => {
-  return INDIAN_LANGUAGES.includes(item.original_language);
-};
-
-/**
- * 1️⃣ TRENDING IN INDIA (Movies)
- * Movies currently playing/streaming in India + trending globally
- * Hybrid: now_playing(region=IN) + trending/movie filtered
- */
-const getTrendingIndia = async (timeWindow = "week") => {
-  const today = new Date();
-  const ninetyDaysAgo = new Date(today - 90 * 24 * 60 * 60 * 1000);
-
-  // SOURCE 1: Now Playing in India (currently in theaters)
-  let nowPlayingIndia = [];
-  try {
-    const nowPlaying = await tmdbRequest("/movie/now_playing", {
-      region: "IN",
-    });
-    nowPlayingIndia = (nowPlaying.results || []).filter((m) => {
-      const hasPopularity = m.popularity >= 30;
-      const hasQuality = m.vote_average >= 5.0;
-      return hasPopularity && hasQuality;
-    });
-  } catch (e) {
-    console.log("Now playing fetch failed:", e.message);
-  }
-
-  // SOURCE 2: Trending movies globally (recent releases)
-  let trendingRecent = [];
-  try {
-    const trending = await tmdbRequest(`/trending/movie/${timeWindow}`);
-    trendingRecent = (trending.results || []).filter((m) => {
-      const releaseDate = m.release_date ? new Date(m.release_date) : null;
-      const isRecent = releaseDate && releaseDate >= ninetyDaysAgo;
-      const hasPopularity = m.popularity >= 50;
-      return isRecent && hasPopularity;
-    });
-  } catch (e) {
-    console.log("Trending fetch failed:", e.message);
-  }
-
-  // SOURCE 3: Popular Indian language movies (recent)
-  let indianMovies = [];
-  try {
-    for (const lang of ["hi", "ta", "te"]) {
-      const data = await tmdbRequest("/discover/movie", {
-        page: 1,
-        with_original_language: lang,
-        "primary_release_date.gte": ninetyDaysAgo.toISOString().split("T")[0],
-        sort_by: "popularity.desc",
-      });
-      indianMovies.push(...(data.results || []).slice(0, 10));
-    }
-  } catch (e) {
-    console.log("Indian movies fetch failed:", e.message);
-  }
-
-  // Merge all sources, remove duplicates
-  const allMovies = [...nowPlayingIndia, ...trendingRecent, ...indianMovies];
-  const uniqueMovies = [...new Map(allMovies.map((m) => [m.id, m])).values()];
-
-  // Sort by popularity (current buzz)
-  uniqueMovies.sort((a, b) => b.popularity - a.popularity);
-
-  return uniqueMovies.slice(0, 20);
-};
-
-/**
- * 2️⃣ INDIAN MOVIES - Multiple Filter Variants
- */
-
-// All Indian Movies - Released only, most recent first
-const getAllIndianMovies = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const data = await tmdbRequest("/discover/movie", {
-    page,
-    with_original_language: "hi|ta|te|ml|kn|bn|mr",
-    "primary_release_date.lte": today,
-    sort_by: "primary_release_date.desc",
-  });
-
-  return {
-    results: data.results || [],
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
-
-// Airing/Now Playing Indian Movies - Recently released (last 45 days)
-const getAiringIndianMovies = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-
-  const data = await tmdbRequest("/discover/movie", {
-    page,
-    with_original_language: "hi|ta|te|ml|kn|bn|mr",
-    "primary_release_date.gte": fortyFiveDaysAgo,
-    "primary_release_date.lte": today,
-    sort_by: "primary_release_date.desc",
-  });
-
-  return {
-    results: data.results || [],
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
-
-// Popular Indian Movies - Released only, sorted by popularity
-const getPopularIndianMovies = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const data = await tmdbRequest("/discover/movie", {
-    page,
-    with_original_language: "hi|ta|te|ml|kn|bn|mr",
-    "primary_release_date.lte": today,
-    sort_by: "popularity.desc",
-    "vote_count.gte": 50,
-    "vote_average.gte": 5.0,
-  });
-
-  return {
-    results: data.results || [],
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
-
-// Upcoming Indian Movies - Future releases
-const getUpcomingIndianMovies = async (page = 1) => {
-  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-
-  const data = await tmdbRequest("/discover/movie", {
-    page,
-    with_original_language: "hi|ta|te|ml|kn|bn|mr",
-    "primary_release_date.gte": tomorrow,
-    sort_by: "primary_release_date.asc",
-  });
-
-  return {
-    results: data.results || [],
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
-
-/**
- * 3️⃣ HOLLYWOOD MOVIES - Multiple Filter Variants
- */
-
-// All Hollywood Movies - Released only, most recent first
-const getAllHollywoodMovies = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const data = await tmdbRequest("/discover/movie", {
-    page,
-    with_original_language: "en",
-    "primary_release_date.lte": today,
-    sort_by: "primary_release_date.desc",
-  });
-
-  const filtered = (data.results || []).filter(
-    (movie) => !isIndianContent(movie)
-  );
-
-  return {
-    results: filtered,
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
-
-// Airing/Now Playing Hollywood Movies - Recently released (last 45 days)
-const getAiringHollywoodMovies = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-
-  const data = await tmdbRequest("/discover/movie", {
-    page,
-    with_original_language: "en",
-    "primary_release_date.gte": fortyFiveDaysAgo,
-    "primary_release_date.lte": today,
-    sort_by: "primary_release_date.desc", // Latest releases first
-  });
-
-  const filtered = (data.results || []).filter(
-    (movie) => !isIndianContent(movie)
-  );
-
-  return {
-    results: filtered,
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
-
-// Popular Hollywood Movies - Released only, sorted by popularity
-const getPopularHollywoodMovies = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const data = await tmdbRequest("/discover/movie", {
-    page,
-    with_original_language: "en",
-    "primary_release_date.lte": today,
-    sort_by: "popularity.desc",
-    "vote_count.gte": 500,
-    "vote_average.gte": 6.0,
-  });
-
-  const filtered = (data.results || []).filter(
-    (movie) => !isIndianContent(movie)
-  );
-
-  return {
-    results: filtered,
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
-
-// Upcoming Hollywood Movies - Future releases
-const getUpcomingHollywoodMovies = async (page = 1) => {
-  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-
-  const data = await tmdbRequest("/discover/movie", {
-    page,
-    with_original_language: "en",
-    "primary_release_date.gte": tomorrow,
-    sort_by: "primary_release_date.asc",
-  });
-
-  const filtered = (data.results || []).filter(
-    (movie) => !isIndianContent(movie)
-  );
-
-  return {
-    results: filtered,
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
-
-/**
- * 4️⃣ INDIAN TV SHOWS - Multiple Filter Variants (Web Series Only)
- */
+// ============ HELPERS ============
 
 // Common blacklist for Indian TV (excludes daily soaps/reality)
 const TV_BLACKLIST_PATTERNS = [
@@ -504,79 +146,65 @@ const filterWebSeries = (shows) => {
   });
 };
 
-// All Indian TV - Released only, most recent first
-const getAllIndianTV = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const data = await tmdbRequest("/discover/tv", {
-    page,
-    with_original_language: "hi|ta|te|ml|kn|bn",
-    "first_air_date.lte": today,
-    sort_by: "first_air_date.desc",
-  });
+// ============ GENERIC DISCOVERY ============
 
-  return {
-    results: filterWebSeries(data.results),
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
+/**
+ * Advanced Discovery Engine for Movies
+ * Supports: Sorting, Filtering by Year, Language, Genres, Region, Vote Count
+ */
+const discoverMovies = async (params = {}) => {
+  const {
+    page = 1,
+    sort_by = "popularity.desc",
+    year,
+    language, // 'hi', 'en', 'south'
+    with_genres,
+    region,
+    vote_average_gte,
+    vote_count_gte,
+    // Date filters
+    "primary_release_date.gte": release_date_gte,
+    "primary_release_date.lte": release_date_lte,
+  } = params;
+
+  const apiParams = {
+    page,
+    sort_by,
+    include_adult: false,
+    include_video: false,
   };
-};
 
-// Airing/Now Playing Indian TV - Recently released (last 45 days)
-const getAiringIndianTV = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
+  if (year) apiParams["primary_release_year"] = year;
 
-  const data = await tmdbRequest("/discover/tv", {
-    page,
-    with_original_language: "hi|ta|te|ml|kn|bn",
-    "first_air_date.gte": fortyFiveDaysAgo,
-    "first_air_date.lte": today,
-    sort_by: "first_air_date.desc",
-  });
+  if (language) {
+    if (language === "south") {
+      apiParams["with_original_language"] = "ta|te|ml|kn";
+    } else if (language === "indian") {
+      apiParams["with_original_language"] = "hi|ta|te|ml|kn|bn|mr|pa|gu";
+    } else {
+      apiParams["with_original_language"] = language;
+    }
+  }
 
-  return {
-    results: filterWebSeries(data.results),
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
+  if (with_genres) apiParams["with_genres"] = with_genres;
+  if (region) apiParams.region = region;
+  if (vote_average_gte) apiParams["vote_average.gte"] = vote_average_gte;
+  if (vote_count_gte) apiParams["vote_count.gte"] = vote_count_gte;
 
-// Popular Indian TV - Released only, sorted by popularity
-const getPopularIndianTV = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const data = await tmdbRequest("/discover/tv", {
-    page,
-    with_original_language: "hi|ta|te|ml|kn|bn",
-    "first_air_date.lte": today,
-    sort_by: "popularity.desc",
-    "vote_count.gte": 20,
-    "vote_average.gte": 5.0,
-  });
+  // Pass through date filters
+  if (release_date_gte)
+    apiParams["primary_release_date.gte"] = release_date_gte;
+  if (release_date_lte)
+    apiParams["primary_release_date.lte"] = release_date_lte;
 
-  return {
-    results: filterWebSeries(data.results),
-    page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
-  };
-};
+  // Sorting nuances
+  if (sort_by === "revenue.desc") {
+    apiParams["vote_count.gte"] = 50;
+  } else if (sort_by === "vote_average.asc") {
+    apiParams["vote_count.gte"] = 10;
+  }
 
-// Upcoming Indian TV - Not yet aired
-const getUpcomingIndianTV = async (page = 1) => {
-  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-
-  const data = await tmdbRequest("/discover/tv", {
-    page,
-    with_original_language: "hi|ta|te|ml|kn|bn",
-    "first_air_date.gte": tomorrow,
-    sort_by: "first_air_date.asc",
-  });
+  const data = await tmdbRequest("/discover/movie", apiParams);
 
   return {
     results: data.results || [],
@@ -587,84 +215,515 @@ const getUpcomingIndianTV = async (page = 1) => {
 };
 
 /**
- * 5️⃣ HOLLYWOOD TV SHOWS - Multiple Filter Variants
+ * Advanced Discovery Engine for TV
  */
+const discoverTV = async (params = {}) => {
+  const {
+    page = 1,
+    sort_by = "popularity.desc",
+    year,
+    language,
+    with_genres,
+    vote_average_gte,
+    vote_count_gte,
+    // TV Date filters
+    "first_air_date.gte": first_air_date_gte,
+    "first_air_date.lte": first_air_date_lte,
+    "air_date.gte": air_date_gte,
+    "air_date.lte": air_date_lte,
+    with_status, // Allow status filtering
+  } = params;
 
-// All Hollywood TV - Released only, sorted by latest release
-const getAllHollywoodTV = async (page = 1) => {
-  const today = new Date().toISOString().split("T")[0];
-  const data = await tmdbRequest("/discover/tv", {
+  const apiParams = {
     page,
-    with_original_language: "en",
-    "first_air_date.lte": today,
-    sort_by: "first_air_date.desc",
-  });
+    sort_by,
+    include_adult: false,
+    include_null_first_air_dates: false,
+  };
 
-  const filtered = (data.results || []).filter(
-    (show) => !isIndianContent(show)
-  );
+  if (year) apiParams["first_air_date_year"] = year;
+
+  if (language) {
+    if (language === "south") {
+      apiParams["with_original_language"] = "ta|te|ml|kn";
+    } else if (language === "indian") {
+      apiParams["with_original_language"] = "hi|ta|te|ml|kn|bn|mr";
+    } else {
+      apiParams["with_original_language"] = language;
+    }
+  }
+
+  if (with_genres) apiParams["with_genres"] = with_genres;
+  if (vote_average_gte) apiParams["vote_average.gte"] = vote_average_gte;
+  if (vote_count_gte) apiParams["vote_count.gte"] = vote_count_gte;
+
+  // Pass through date filters
+  if (first_air_date_gte) apiParams["first_air_date.gte"] = first_air_date_gte;
+  if (first_air_date_lte) apiParams["first_air_date.lte"] = first_air_date_lte;
+  if (air_date_gte) apiParams["air_date.gte"] = air_date_gte;
+  if (air_date_lte) apiParams["air_date.lte"] = air_date_lte;
+  if (with_status) apiParams["with_status"] = with_status;
+
+  const data = await tmdbRequest("/discover/tv", apiParams);
+
+  // Apply custom filtering for Indian Web Series if needed
+  let results = data.results || [];
+  if (
+    language === "indian" ||
+    language === "south" ||
+    (language && language.includes("hi"))
+  ) {
+    results = filterWebSeries(results);
+  }
 
   return {
-    results: filtered,
+    results,
     page: data.page,
     total_pages: Math.min(data.total_pages || 0, 500),
     total_results: data.total_results || 0,
   };
 };
 
-// Airing/Now Playing Hollywood TV - Recently released (last 45 days)
-const getAiringHollywoodTV = async (page = 1) => {
+// ============ MOVIE ENDPOINTS ============
+
+const getTrendingMovies = async (timeWindow = "week") => {
+  const data = await tmdbRequest(`/trending/movie/${timeWindow}`);
+  return data.results;
+};
+
+const getPopularMovies = async (page = 1, filters = {}) => {
+  const data = await discoverMovies({
+    page,
+    sort_by: "popularity.desc",
+    ...filters,
+  });
+  return {
+    ...data,
+    results: (data.results || []).filter((m) => !isIndianContent(m)),
+  };
+};
+
+const getNowPlayingMovies = async (page = 1, filters = {}) => {
   const today = new Date().toISOString().split("T")[0];
   const fortyFiveDaysAgo = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
     .toISOString()
     .split("T")[0];
 
-  const data = await tmdbRequest("/discover/tv", {
+  const data = await discoverMovies({
+    page,
+    "primary_release_date.gte": fortyFiveDaysAgo,
+    "primary_release_date.lte": today,
+    sort_by: "popularity.desc",
+    ...filters,
+  });
+  return {
+    ...data,
+    results: (data.results || []).filter((m) => !isIndianContent(m)),
+  };
+};
+
+const getUpcomingMovies = async (page = 1, filters = {}) => {
+  const today = new Date().toISOString().split("T")[0];
+  const data = await discoverMovies({
+    page,
+    "primary_release_date.gte": today,
+    sort_by: "popularity.desc", // Upcoming usually sorted by popularity or date
+    ...filters,
+  });
+  return {
+    ...data,
+    results: (data.results || []).filter((m) => !isIndianContent(m)),
+  };
+};
+
+const getTopRatedMovies = async (page = 1, filters = {}) => {
+  const data = await discoverMovies({
+    page,
+    sort_by: "vote_average.desc",
+    vote_count_gte: 300,
+    ...filters,
+  });
+  return {
+    ...data,
+    results: (data.results || []).filter((m) => !isIndianContent(m)),
+  };
+};
+
+const getMovieDetails = async (movieId) => {
+  const tmdbData = await tmdbRequest(`/movie/${movieId}`, {
+    append_to_response:
+      "credits,videos,recommendations,similar,release_dates,keywords,external_ids",
+  });
+
+  // Extract useful extra data
+  const keywords = tmdbData.keywords?.keywords?.map((k) => k.name) || [];
+  const certification =
+    tmdbData.release_dates?.results
+      ?.find((r) => r.iso_3166_1 === "US" || r.iso_3166_1 === "IN")
+      ?.release_dates?.find((d) => d.certification)?.certification || "NR";
+
+  const imdbId = tmdbData.external_ids?.imdb_id;
+  const omdbData = imdbId ? await omdbService.getOmdbData(imdbId) : null;
+
+  return {
+    ...tmdbData,
+    keywords_list: keywords,
+    certification_code: certification,
+    omdb: omdbData,
+  };
+};
+
+const getMovieCredits = async (movieId) =>
+  tmdbRequest(`/movie/${movieId}/credits`);
+const getSimilarMovies = async (movieId) =>
+  tmdbRequest(`/movie/${movieId}/similar`);
+const getMovieVideos = async (movieId) =>
+  tmdbRequest(`/movie/${movieId}/videos`);
+
+const getMoviesByGenre = async (genreId, page = 1) => {
+  const data = await tmdbRequest("/discover/movie", {
+    with_genres: genreId,
+    page,
+    sort_by: "popularity.desc",
+  });
+  return {
+    results: data.results,
+    page: data.page,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+  };
+};
+
+const searchMovies = async (query, page = 1) => {
+  const data = await tmdbRequest("/search/movie", { query, page });
+  return {
+    results: data.results,
+    page: data.page,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+  };
+};
+
+const getMovieGenres = async () => {
+  const data = await tmdbRequest("/genre/movie/list");
+  return data.genres;
+};
+
+// ============ INDIA-SPECIFIC ENDPOINTS ============
+
+const INDIAN_LANGUAGES = ["hi", "ta", "te", "ml", "kn"];
+
+const isIndianContent = (item) => {
+  return INDIAN_LANGUAGES.includes(item.original_language);
+};
+
+const getTrendingIndia = async (timeWindow = "week") => {
+  const today = new Date();
+  const ninetyDaysAgo = new Date(today - 90 * 24 * 60 * 60 * 1000);
+
+  let nowPlayingIndia = [];
+  try {
+    const nowPlaying = await tmdbRequest("/movie/now_playing", {
+      region: "IN",
+    });
+    nowPlayingIndia = (nowPlaying.results || []).filter((m) => {
+      const hasPopularity = m.popularity >= 30;
+      const hasQuality = m.vote_average >= 5.0;
+      return hasPopularity && hasQuality;
+    });
+  } catch (e) {
+    console.log("Now playing fetch failed:", e.message);
+  }
+
+  let trendingRecent = [];
+  try {
+    const trending = await tmdbRequest(`/trending/movie/${timeWindow}`);
+    trendingRecent = (trending.results || []).filter((m) => {
+      const releaseDate = m.release_date ? new Date(m.release_date) : null;
+      const isRecent = releaseDate && releaseDate >= ninetyDaysAgo;
+      const hasPopularity = m.popularity >= 50;
+      return isRecent && hasPopularity;
+    });
+  } catch (e) {
+    console.log("Trending fetch failed:", e.message);
+  }
+
+  let indianMovies = [];
+  try {
+    for (const lang of ["hi", "ta", "te"]) {
+      const data = await tmdbRequest("/discover/movie", {
+        page: 1,
+        with_original_language: lang,
+        "primary_release_date.gte": ninetyDaysAgo.toISOString().split("T")[0],
+        sort_by: "popularity.desc",
+      });
+      indianMovies.push(...(data.results || []).slice(0, 10));
+    }
+  } catch (e) {
+    console.log("Indian movies fetch failed:", e.message);
+  }
+
+  const allMovies = [...nowPlayingIndia, ...trendingRecent, ...indianMovies];
+  const uniqueMovies = [...new Map(allMovies.map((m) => [m.id, m])).values()];
+  uniqueMovies.sort((a, b) => b.popularity - a.popularity);
+  return uniqueMovies.slice(0, 20);
+};
+
+// 2️⃣ INDIAN MOVIES
+const getAllIndianMovies = async (page = 1, filters = {}) =>
+  discoverMovies({
+    page,
+    language: "indian",
+    sort_by: "primary_release_date.desc",
+    ...filters,
+  });
+// "Now Playing" for India
+const getAiringIndianMovies = async (page = 1, filters = {}) => {
+  const today = new Date().toISOString().split("T")[0];
+  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+  const data = await discoverMovies({
+    page,
+    language: "indian",
+    "primary_release_date.gte": fortyFiveDaysAgo,
+    "primary_release_date.lte": today,
+    sort_by: "primary_release_date.desc",
+    ...filters,
+  });
+  return {
+    results: data.results,
+    page: data.page,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+  };
+};
+
+const getPopularIndianMovies = async (page = 1, filters = {}) =>
+  discoverMovies({
+    page,
+    language: "indian",
+    sort_by: "popularity.desc",
+    vote_count_gte: 20,
+    ...filters,
+  });
+
+const getUpcomingIndianMovies = async (page = 1, filters = {}) => {
+  const today = new Date().toISOString().split("T")[0];
+  const data = await discoverMovies({
+    page,
+    language: "indian",
+    "primary_release_date.gte": today,
+    sort_by: "primary_release_date.asc",
+    ...filters,
+  });
+  return {
+    results: data.results,
+    page: data.page,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+  };
+};
+
+const getTopRatedIndianMovies = async (page = 1, filters = {}) =>
+  discoverMovies({
+    page,
+    language: "indian",
+    sort_by: "vote_average.desc",
+    vote_count_gte: 50,
+    ...filters,
+  });
+
+// 3️⃣ HOLLYWOOD MOVIES (Existing methods + Top Rated)
+const getAllHollywoodMovies = async (page = 1, filters = {}) =>
+  discoverMovies({
+    page,
+    language: "en",
+    sort_by: "primary_release_date.desc",
+    ...filters,
+  });
+const getAiringHollywoodMovies = async (page = 1, filters = {}) => {
+  const today = new Date().toISOString().split("T")[0];
+  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+  const data = await tmdbRequest("/discover/movie", {
     page,
     with_original_language: "en",
+    "primary_release_date.gte": fortyFiveDaysAgo,
+    "primary_release_date.lte": today,
+    sort_by: "primary_release_date.desc",
+    ...filters,
+  });
+  const filtered = (data.results || []).filter(
+    (show) => !isIndianContent(show)
+  );
+  return {
+    results: filtered,
+    page: data.page,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+  };
+};
+const getPopularHollywoodMovies = async (page = 1, filters = {}) =>
+  discoverMovies({
+    page,
+    language: "en",
+    sort_by: "popularity.desc",
+    vote_count_gte: 500,
+    ...filters,
+  });
+const getUpcomingHollywoodMovies = async (page = 1, filters = {}) => {
+  // Use TOMORROW to strictly filter out already released movies
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+  const data = await tmdbRequest("/discover/movie", {
+    page,
+    with_original_language: "en",
+    "primary_release_date.gte": tomorrow,
+    sort_by: "primary_release_date.asc", // Nearest first
+    "vote_count.gte": 0,
+    ...filters,
+  });
+  const filtered = (data.results || []).filter(
+    (show) => !isIndianContent(show)
+  );
+  return {
+    results: filtered,
+    page: data.page,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+  };
+};
+const getTopRatedHollywoodMovies = async (page = 1, filters = {}) =>
+  discoverMovies({
+    page,
+    language: "en",
+    sort_by: "vote_average.desc",
+    vote_count_gte: 1000,
+    ...filters,
+  });
+
+// 4️⃣ INDIAN TV SHOWS
+const getAllIndianTV = async (page = 1, filters = {}) =>
+  discoverTV({
+    page,
+    language: "indian",
+    sort_by: "first_air_date.desc",
+    ...filters,
+  });
+const getAiringIndianTV = async (page = 1, filters = {}) => {
+  const today = new Date().toISOString().split("T")[0];
+  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+  const data = await tmdbRequest("/discover/tv", {
+    page,
+    with_original_language: "hi|ta|te|ml|kn|bn",
     "first_air_date.gte": fortyFiveDaysAgo,
     "first_air_date.lte": today,
     sort_by: "first_air_date.desc",
+    ...filters,
   });
-
-  const filtered = (data.results || []).filter(
-    (show) => !isIndianContent(show)
-  );
-
   return {
-    results: filtered,
+    results: filterWebSeries(data.results),
     page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
   };
 };
+const getPopularIndianTV = async (page = 1, filters = {}) =>
+  discoverTV({
+    page,
+    language: "indian",
+    sort_by: "popularity.desc",
+    vote_count_gte: 50, // Increased from 10 to filter out niche/low-quality
+    "vote_average.gte": 5, // Minimum rating to avoid trash
+    ...filters,
+  });
 
-// Popular Hollywood TV - Released only, sorted by popularity
-const getPopularHollywoodTV = async (page = 1) => {
+const getUpcomingIndianTV = async (page = 1, filters = {}) => {
   const today = new Date().toISOString().split("T")[0];
   const data = await tmdbRequest("/discover/tv", {
     page,
-    with_original_language: "en",
-    "first_air_date.lte": today,
-    sort_by: "popularity.desc",
-    "vote_count.gte": 300,
-    "vote_average.gte": 6.5,
+    with_original_language: "hi|ta|te|ml|kn|bn",
+    "first_air_date.gte": today,
+    sort_by: "first_air_date.asc", // Nearest first
+    ...filters,
   });
-
-  const filtered = (data.results || []).filter(
-    (show) => !isIndianContent(show)
-  );
-
   return {
-    results: filtered,
+    results: data.results || [],
     page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
   };
 };
 
-// Upcoming Hollywood TV - Not yet aired
-const getUpcomingHollywoodTV = async (page = 1) => {
+const getTopRatedIndianTV = async (page = 1, filters = {}) =>
+  discoverTV({
+    page,
+    language: "indian",
+    sort_by: "vote_average.desc",
+    vote_count_gte: 20,
+    ...filters,
+  });
+
+// 5️⃣ HOLLYWOOD TV SHOWS
+const getAllHollywoodTV = async (page = 1, filters = {}) => {
+  const data = await discoverTV({
+    page,
+    language: "en",
+    sort_by: "first_air_date.desc",
+    ...filters,
+  });
+  data.results = data.results.filter((s) => !isIndianContent(s));
+  return data;
+};
+
+const getAiringHollywoodTV = async (page = 1, filters = {}) => {
+  const today = new Date().toISOString().split("T")[0];
+  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+
+  // Use 'air_date' checks to find shows with episodes airing NOW or RECENTLY
+  // AND 'with_status' to strictly exclude Ended/Canceled shows
+  // Status: 0=Returning Series, 1=Planned, 2=In Production, 3=Ended, 4=Canceled, 5=Pilot
+  const data = await tmdbRequest("/discover/tv", {
+    page,
+    with_original_language: "en",
+    "air_date.gte": fortyFiveDaysAgo,
+    "air_date.lte": today,
+    with_status: "0|2", // Returning Series OR In Production
+    sort_by: "popularity.desc",
+    include_null_first_air_dates: false,
+    ...filters,
+  });
+
+  const filtered = (data.results || []).filter((s) => !isIndianContent(s));
+  return {
+    results: filtered,
+    page: data.page,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+  };
+};
+
+const getPopularHollywoodTV = async (page = 1, filters = {}) => {
+  const data = await discoverTV({
+    page,
+    language: "en",
+    sort_by: "popularity.desc",
+    vote_count_gte: 300,
+    ...filters,
+  });
+  data.results = data.results.filter((s) => !isIndianContent(s));
+  return data;
+};
+
+const getUpcomingHollywoodTV = async (page = 1, filters = {}) => {
+  // Use TOMORROW to effectively filter out today's released content if user finds it redundant
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
     .toISOString()
     .split("T")[0];
@@ -673,19 +732,28 @@ const getUpcomingHollywoodTV = async (page = 1) => {
     page,
     with_original_language: "en",
     "first_air_date.gte": tomorrow,
-    sort_by: "first_air_date.asc",
+    sort_by: "first_air_date.asc", // Nearest Date First
+    include_null_first_air_dates: false,
+    ...filters,
   });
-
-  const filtered = (data.results || []).filter(
-    (show) => !isIndianContent(show)
-  );
-
+  const filtered = (data.results || []).filter((s) => !isIndianContent(s));
   return {
     results: filtered,
     page: data.page,
-    total_pages: Math.min(data.total_pages || 0, 500),
-    total_results: data.total_results || 0,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
   };
+};
+const getTopRatedHollywoodTV = async (page = 1, filters = {}) => {
+  const data = await discoverTV({
+    page,
+    language: "en",
+    sort_by: "vote_average.desc",
+    vote_count_gte: 300,
+    ...filters,
+  });
+  data.results = data.results.filter((s) => !isIndianContent(s));
+  return data;
 };
 
 // ============ TV SHOW ENDPOINTS ============
@@ -694,66 +762,71 @@ const getTrendingTV = async (timeWindow = "week") => {
   const data = await tmdbRequest(`/trending/tv/${timeWindow}`);
   return data.results;
 };
-
-const getPopularTV = async (page = 1) => {
-  const data = await tmdbRequest("/tv/popular", { page });
+const getPopularTV = async (page = 1, filters = {}) => {
+  const data = await discoverTV({
+    page,
+    sort_by: "popularity.desc",
+    ...filters,
+  });
   return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
+    ...data,
+    results: (data.results || []).filter((s) => !isIndianContent(s)),
   };
 };
 
-const getAiringTodayTV = async (page = 1) => {
-  const data = await tmdbRequest("/tv/airing_today", { page });
+const getAiringTodayTV = async (page = 1, filters = {}) => {
+  const today = new Date().toISOString().split("T")[0];
+  // Airing today roughly means this week for safety, or strict equality
+  const data = await discoverTV({
+    page,
+    "first_air_date.lte": today,
+    sort_by: "popularity.desc",
+    "air_date.lte": today, // Ensure it's currently airing
+    with_status: "0|2", // Returning or In Production only
+    ...filters,
+  });
   return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
+    ...data,
+    results: (data.results || []).filter((s) => !isIndianContent(s)),
   };
 };
 
-const getOnTheAirTV = async (page = 1) => {
-  const data = await tmdbRequest("/tv/on_the_air", { page });
+const getOnTheAirTV = async (page = 1, filters = {}) => {
+  const today = new Date().toISOString().split("T")[0];
+  const data = await discoverTV({
+    page,
+    "first_air_date.gte": today, // Upcomingish
+    sort_by: "popularity.desc",
+    ...filters,
+  });
   return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
+    ...data,
+    results: (data.results || []).filter((s) => !isIndianContent(s)),
   };
 };
 
-const getTopRatedTV = async (page = 1) => {
-  const data = await tmdbRequest("/tv/top_rated", { page });
+const getTopRatedTV = async (page = 1, filters = {}) => {
+  const data = await discoverTV({
+    page,
+    sort_by: "vote_average.desc",
+    vote_count_gte: 150,
+    ...filters,
+  });
   return {
-    results: data.results,
-    page: data.page,
-    total_pages: data.total_pages,
-    total_results: data.total_results,
+    ...data,
+    results: (data.results || []).filter((s) => !isIndianContent(s)),
   };
 };
 
 const getTVDetails = async (tvId) => {
   return await tmdbRequest(`/tv/${tvId}`, {
     append_to_response:
-      "credits,videos,recommendations,similar,content_ratings",
+      "credits,videos,recommendations,similar,content_ratings,external_ids,keywords",
   });
 };
-
-const getTVCredits = async (tvId) => {
-  return await tmdbRequest(`/tv/${tvId}/credits`);
-};
-
-const getSimilarTV = async (tvId) => {
-  return await tmdbRequest(`/tv/${tvId}/similar`);
-};
-
-const getTVVideos = async (tvId) => {
-  return await tmdbRequest(`/tv/${tvId}/videos`);
-};
-
+const getTVCredits = async (tvId) => tmdbRequest(`/tv/${tvId}/credits`);
+const getSimilarTV = async (tvId) => tmdbRequest(`/tv/${tvId}/similar`);
+const getTVVideos = async (tvId) => tmdbRequest(`/tv/${tvId}/videos`);
 const getTVByGenre = async (genreId, page = 1) => {
   const data = await tmdbRequest("/discover/tv", {
     with_genres: genreId,
@@ -767,7 +840,6 @@ const getTVByGenre = async (genreId, page = 1) => {
     total_results: data.total_results,
   };
 };
-
 const searchTV = async (query, page = 1) => {
   const data = await tmdbRequest("/search/tv", { query, page });
   return {
@@ -777,10 +849,13 @@ const searchTV = async (query, page = 1) => {
     total_results: data.total_results,
   };
 };
-
 const getTVGenres = async () => {
   const data = await tmdbRequest("/genre/tv/list");
   return data.genres;
+};
+
+const getTVSeasonDetails = async (tvId, seasonNumber) => {
+  return await tmdbRequest(`/tv/${tvId}/season/${seasonNumber}`);
 };
 
 // ============ PERSON ENDPOINTS ============
@@ -790,11 +865,17 @@ const getPersonDetails = async (personId) => {
     append_to_response: "movie_credits,tv_credits,images",
   });
 };
-
-const getPersonCredits = async (personId) => {
-  return await tmdbRequest(`/person/${personId}/combined_credits`);
+const getPersonCredits = async (personId) =>
+  tmdbRequest(`/person/${personId}/combined_credits`);
+const getPopularPeople = async (page = 1) => {
+  const data = await tmdbRequest("/person/popular", { page });
+  return {
+    results: data.results,
+    page: data.page,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+  };
 };
-
 const searchPeople = async (query, page = 1) => {
   const data = await tmdbRequest("/search/person", { query, page });
   return {
@@ -806,7 +887,6 @@ const searchPeople = async (query, page = 1) => {
 };
 
 // ============ MULTI SEARCH ============
-
 const multiSearch = async (query, page = 1) => {
   const data = await tmdbRequest("/search/multi", { query, page });
   return {
@@ -818,13 +898,15 @@ const multiSearch = async (query, page = 1) => {
 };
 
 // ============ UTILS ============
-
 const clearCache = () => {
   cache.flushAll();
   return { message: "Cache cleared" };
 };
 
 module.exports = {
+  // Discovery
+  discoverMovies,
+  discoverTV,
   // Movies
   getTrendingMovies,
   getPopularMovies,
@@ -844,19 +926,23 @@ module.exports = {
   getAiringIndianMovies,
   getPopularIndianMovies,
   getUpcomingIndianMovies,
+  getTopRatedIndianMovies,
   getAllHollywoodMovies,
   getAiringHollywoodMovies,
   getPopularHollywoodMovies,
   getUpcomingHollywoodMovies,
+  getTopRatedHollywoodMovies,
   // India-specific TV
   getAllIndianTV,
   getAiringIndianTV,
   getPopularIndianTV,
   getUpcomingIndianTV,
+  getTopRatedIndianTV,
   getAllHollywoodTV,
   getAiringHollywoodTV,
   getPopularHollywoodTV,
   getUpcomingHollywoodTV,
+  getTopRatedHollywoodTV,
   // TV Shows
   getTrendingTV,
   getPopularTV,
@@ -870,9 +956,11 @@ module.exports = {
   getTVByGenre,
   searchTV,
   getTVGenres,
+  getTVSeasonDetails,
   // People
   getPersonDetails,
   getPersonCredits,
+  getPopularPeople,
   searchPeople,
   // Multi
   multiSearch,

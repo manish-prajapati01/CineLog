@@ -11,37 +11,96 @@ const tvService = {
     api.get(`/tv/trending?timeWindow=${timeWindow}`),
 
   // Get popular TV shows
-  getPopular: (page = 1) => api.get(`/tv/popular?page=${page}`),
+  getPopular: (page = 1, genre = null, filters = {}) => {
+    const params = { page, ...filters };
+    if (genre) params.genre = genre;
+    return api.get('/tv/popular', { params });
+  },
 
   // ====== INDIAN TV ======
-  getAllIndian: (page = 1) => api.get(`/tv/indian/all?page=${page}`),
-  getAiringIndian: (page = 1) => api.get(`/tv/indian/airing?page=${page}`),
-  getPopularIndian: (page = 1) => api.get(`/tv/popular/indian?page=${page}`),
-  getUpcomingIndian: (page = 1) => api.get(`/tv/indian/upcoming?page=${page}`),
+  getAllIndian: (page = 1, genre = null, filters = {}) => {
+    const params = { page, ...filters };
+    if (genre) params.genre = genre;
+    return api.get('/tv/indian/all', { params });
+  },
+  getAiringIndian: (page = 1, genre = null, filters = {}) => {
+    const params = { page, ...filters };
+    if (genre) params.genre = genre;
+    return api.get('/tv/indian/airing', { params });
+  },
+  getPopularIndian: (page = 1, genre = null, filters = {}) => {
+    const params = { page, ...filters };
+    if (genre) params.genre = genre;
+    return api.get('/tv/popular/indian', { params });
+  },
+  getUpcomingIndian: (page = 1, genre = null, filters = {}) => {
+    const params = { page, ...filters };
+    if (genre) params.genre = genre;
+    return api.get('/tv/indian/upcoming', { params });
+  },
+  getTopRatedIndian: (page = 1, genre = null) => {
+    const params = { page };
+    if (genre) params.genre = genre;
+    return api.get('/tv/indian/top_rated', { params });
+  },
 
   // ====== HOLLYWOOD TV ======
-  getAllHollywood: (page = 1) => api.get(`/tv/hollywood/all?page=${page}`),
-  getAiringHollywood: (page = 1) =>
-    api.get(`/tv/hollywood/airing?page=${page}`),
-  getPopularHollywood: (page = 1) =>
-    api.get(`/tv/popular/hollywood?page=${page}`),
-  getUpcomingHollywood: (page = 1) =>
-    api.get(`/tv/hollywood/upcoming?page=${page}`),
+  getAllHollywood: (page = 1, genre = null, filters = {}) => {
+    const params = { page, ...filters };
+    if (genre) params.genre = genre;
+    return api.get('/tv/hollywood/all', { params });
+  },
+  getAiringHollywood: (page = 1, genre = null, filters = {}) => {
+    const params = { page, ...filters };
+    if (genre) params.genre = genre;
+    return api.get('/tv/hollywood/airing', { params });
+  },
+  getPopularHollywood: (page = 1, genre = null, filters = {}) => {
+    const params = { page, ...filters };
+    if (genre) params.genre = genre;
+    return api.get('/tv/popular/hollywood', { params });
+  },
+  getUpcomingHollywood: (page = 1, genre = null, filters = {}) => {
+    const params = { page, ...filters };
+    if (genre) params.genre = genre;
+    return api.get('/tv/hollywood/upcoming', { params });
+  },
+  getTopRatedHollywood: (page = 1, genre = null) => {
+    const params = { page };
+    if (genre) params.genre = genre;
+    return api.get('/tv/hollywood/top_rated', { params });
+  },
 
   // Get airing today TV shows
-  getAiringToday: (page = 1) => api.get(`/tv/airing_today?page=${page}`),
+  getAiringToday: (page = 1, genre = null) => {
+    const params = { page };
+    if (genre) params.genre = genre;
+    return api.get('/tv/airing_today', { params });
+  },
 
   // Get on the air TV shows
-  getOnTheAir: (page = 1) => api.get(`/tv/on_the_air?page=${page}`),
+  getOnTheAir: (page = 1, genre = null) => {
+    const params = { page };
+    if (genre) params.genre = genre;
+    return api.get('/tv/on_the_air', { params });
+  },
 
   // Get top rated TV shows
-  getTopRated: (page = 1) => api.get(`/tv/top_rated?page=${page}`),
+  getTopRated: (page = 1, genre = null) => {
+    const params = { page };
+    if (genre) params.genre = genre;
+    return api.get('/tv/top_rated', { params });
+  },
 
   // Get TV show details
   getTVDetails: (id) => api.get(`/tv/${id}`),
 
   // Get TV show credits (cast & crew)
   getTVCredits: (id) => api.get(`/tv/${id}/credits`),
+
+  // Get TV Season details (episodes)
+  getTVSeason: (id, seasonNumber) =>
+    api.get(`/tv/${id}/season/${seasonNumber}`),
 
   // Get similar TV shows
   getSimilarTV: (id) => api.get(`/tv/${id}/similar`),

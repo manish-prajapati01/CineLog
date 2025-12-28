@@ -4,8 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { MovieCard, MovieGridSkeleton } from '../../components';
-import movieService from '../../services/movieService';
+import { MovieCard, MovieGridSkeleton, Dropdown } from '../../components';
 import { moviesAPI } from '../../services';
 import './Movies.css';
 
@@ -14,32 +13,25 @@ const Movies = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const region = searchParams.get('region'); // 'indian', 'hollywood', or null
   const filterParam = searchParams.get('filter') || 'popular'; // Default to popular
+  const genreParam = searchParams.get('genre');
+  const langParam = searchParams.get('language') || '';
 
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState(filterParam);
+  const [language, setLanguage] = useState(langParam);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [genres, setGenres] = useState([]);
-  const [selectedGenre, setSelectedGenre] = useState(null);
+  const [selectedGenre, setSelectedGenre] = useState(
+    genreParam ? parseInt(genreParam) : null,
+  );
 
   // Get page title based on region
   // Get page title based on region
   const getPageTitle = () => {
     if (region === 'indian') {
-      return (
-        <span className='flex items-center gap-2'>
-          <img
-            src='https://flagcdn.com/20x15/in.png'
-            srcSet='https://flagcdn.com/40x30/in.png 2x'
-            width='20'
-            height='15'
-            alt='India'
-            style={{ display: 'inline-block', verticalAlign: 'middle' }}
-          />{' '}
-          Indian Movies
-        </span>
-      );
+      return <span className='flex items-center gap-2'>Indian Movies</span>;
     }
     if (region === 'hollywood') return '🌍 Hollywood Movies';
     return 'Movies';
@@ -47,10 +39,10 @@ const Movies = () => {
 
   // Category tabs for region-filtered views
   const regionCategories = [
-    { key: 'all', label: 'All' },
-    { key: 'airing', label: 'Airing' },
     { key: 'popular', label: 'Popular' },
+    { key: 'now_playing', label: 'Now Playing' },
     { key: 'upcoming', label: 'Upcoming' },
+    { key: 'top_rated', label: 'Top Rated' },
   ];
 
   // Category tabs for general view
@@ -61,26 +53,22 @@ const Movies = () => {
     { key: 'top_rated', label: 'Top Rated' },
   ];
 
-  // Fetch genres on mount (only for non-region views)
+  // Fetch genres on mount
   useEffect(() => {
-    if (region) return;
-    const fetchGenres = async () => {
-      try {
-        const res = await movieService.getGenres();
-        const genreData = res.data?.genres || res.data?.data || res.data || [];
-        setGenres(Array.isArray(genreData) ? genreData : []);
-      } catch (error) {
-        console.error('Error fetching genres:', error);
-      }
-    };
-    fetchGenres();
-  }, [region]);
+    // Simplified Genre List per user request
+    const simplifiedGenres = [
+      { id: 28, name: 'Action' },
+      { id: 18, name: 'Drama' },
+      { id: 35, name: 'Comedy' },
+      { id: 27, name: 'Horror' },
+      { id: 10749, name: 'Romance' },
+    ];
+    setGenres(simplifiedGenres);
+  }, []);
 
-  // Reset category when region changes
-  useEffect(() => {
-    setCategory(filterParam);
-    setPage(1);
-  }, [region, filterParam]);
+  // ... (Reset category effect) ...
+
+  // ... (Sync selectedGenre effect) ...
 
   // Fetch movies when category/page/genre/region changes
   useEffect(() => {
@@ -89,51 +77,102 @@ const Movies = () => {
       setMovies([]); // Clear existing movies to prevent stale data
       try {
         let response;
+        const filters = { language: language };
 
         // Region-based filtering with category support
         if (region === 'indian') {
           switch (category) {
-            case 'all':
-              response = await moviesAPI.getAllIndian(page);
-              break;
-            case 'airing':
-              response = await moviesAPI.getAiringIndian(page);
+            case 'now_playing':
+              response = await moviesAPI.getAiringIndian(
+                page,
+                selectedGenre,
+                filters,
+              );
               break;
             case 'upcoming':
-              response = await moviesAPI.getUpcomingIndian(page);
+              response = await moviesAPI.getUpcomingIndian(
+                page,
+                selectedGenre,
+                filters,
+              );
+              break;
+            case 'top_rated':
+              response = await moviesAPI.getTopRatedIndian(
+                page,
+                selectedGenre,
+                filters,
+              );
               break;
             default:
-              response = await moviesAPI.getPopularIndian(page);
+              response = await moviesAPI.getPopularIndian(
+                page,
+                selectedGenre,
+                filters,
+              );
           }
         } else if (region === 'hollywood') {
           switch (category) {
-            case 'all':
-              response = await moviesAPI.getAllHollywood(page);
-              break;
-            case 'airing':
-              response = await moviesAPI.getAiringHollywood(page);
-              break;
-            case 'upcoming':
-              response = await moviesAPI.getUpcomingHollywood(page);
-              break;
-            default:
-              response = await moviesAPI.getPopularHollywood(page);
-          }
-        } else if (selectedGenre) {
-          response = await movieService.getByGenre(selectedGenre, page);
-        } else {
-          switch (category) {
             case 'now_playing':
-              response = await movieService.getNowPlaying(page);
+              response = await moviesAPI.getAiringHollywood(
+                page,
+                selectedGenre,
+                filters,
+              );
               break;
             case 'upcoming':
-              response = await movieService.getUpcoming(page);
+              response = await moviesAPI.getUpcomingHollywood(
+                page,
+                selectedGenre,
+                filters,
+              );
               break;
             case 'top_rated':
-              response = await movieService.getTopRated(page);
+              response = await moviesAPI.getTopRatedHollywood(
+                page,
+                selectedGenre,
+                filters,
+              );
               break;
             default:
-              response = await movieService.getPopular(page);
+              response = await moviesAPI.getPopularHollywood(
+                page,
+                selectedGenre,
+                filters,
+              );
+          }
+        } else if (selectedGenre && category === 'popular') {
+          // If genre selected and in default "popular" view, use getByGenre
+          response = await moviesAPI.getByGenre(selectedGenre, page);
+        } else {
+          // Global views
+          switch (category) {
+            case 'now_playing':
+              response = await moviesAPI.getNowPlaying(
+                page,
+                selectedGenre,
+                filters,
+              );
+              break;
+            case 'upcoming':
+              response = await moviesAPI.getUpcoming(
+                page,
+                selectedGenre,
+                filters,
+              );
+              break;
+            case 'top_rated':
+              response = await moviesAPI.getTopRated(
+                page,
+                selectedGenre,
+                filters,
+              );
+              break;
+            default:
+              response = await moviesAPI.getPopular(
+                page,
+                selectedGenre,
+                filters,
+              );
           }
         }
 
@@ -148,20 +187,27 @@ const Movies = () => {
     };
     fetchMovies();
     window.scrollTo(0, 0);
-  }, [category, page, selectedGenre, region]);
+  }, [category, page, selectedGenre, region, language]);
 
   const handleCategoryChange = (cat) => {
     setCategory(cat);
-    setSelectedGenre(null);
+    // Don't reset genre if it's there? The user might want "Indian -> Action -> Top Rated"
+    // But currently UI might imply tabs switch everything. Let's keep genre.
     setPage(1);
-    if (region) {
-      setSearchParams({ region, filter: cat });
-    }
+    const newParams = { filter: cat };
+    if (region) newParams.region = region;
+    if (selectedGenre) newParams.genre = selectedGenre;
+    setSearchParams(newParams);
   };
 
   const handleGenreChange = (genreId) => {
-    setSelectedGenre(genreId === selectedGenre ? null : genreId);
+    const newGenre = genreId === selectedGenre ? null : genreId;
+    setSelectedGenre(newGenre);
     setPage(1);
+    const newParams = { filter: category };
+    if (region) newParams.region = region;
+    if (newGenre) newParams.genre = newGenre;
+    setSearchParams(newParams);
   };
 
   return (
@@ -180,7 +226,7 @@ const Movies = () => {
         {(region ? regionCategories : generalCategories).map((cat) => (
           <button
             key={cat.key}
-            className={`category-btn ${category === cat.key && !selectedGenre ? 'active' : ''}`}
+            className={`category-btn ${category === cat.key ? 'active' : ''}`}
             onClick={() => handleCategoryChange(cat.key)}
           >
             {cat.label}
@@ -188,20 +234,48 @@ const Movies = () => {
         ))}
       </div>
 
-      {/* Genre Filters - Only for non-region views */}
-      {!region && (
-        <div className='genre-filters'>
-          {genres.map((genre) => (
-            <button
-              key={genre.id}
-              className={`genre-btn ${selectedGenre === genre.id ? 'active' : ''}`}
-              onClick={() => handleGenreChange(genre.id)}
-            >
-              {genre.name}
-            </button>
-          ))}
+      {/* Advanced Filter Bar */}
+      <div className='filter-bar'>
+        {/* Language Filter (Indian Only) */}
+        {region === 'indian' && (
+          <div className='filter-group'>
+            <label className='filter-label'>Language:</label>
+            <Dropdown
+              options={[
+                { value: '', label: 'All Languages' },
+                { value: 'hi', label: 'Hindi' },
+                { value: 'ta', label: 'Tamil' },
+                { value: 'te', label: 'Telugu' },
+                { value: 'ml', label: 'Malayalam' },
+                { value: 'kn', label: 'Kannada' },
+              ]}
+              value={language}
+              onChange={(val) => {
+                setLanguage(val);
+                setSearchParams({
+                  ...Object.fromEntries(searchParams),
+                  language: val,
+                });
+              }}
+              placeholder='Select Language'
+            />
+          </div>
+        )}
+
+        {/* Genre Filter */}
+        <div className='filter-group'>
+          <label className='filter-label'>Genre:</label>
+          <Dropdown
+            options={[
+              { value: '', label: 'All Genres' },
+              ...genres.map((g) => ({ value: g.id, label: g.name })),
+            ]}
+            value={selectedGenre || ''}
+            onChange={(val) => handleGenreChange(val ? parseInt(val) : null)}
+            placeholder='Select Genre'
+          />
         </div>
-      )}
+      </div>
 
       {/* Movies Grid */}
       <div className='content-section'>

@@ -8,8 +8,13 @@ import { useNavigate } from 'react-router-dom';
 
 const { TabPane } = Tabs;
 
+/**
+ * Admin Dashboard
+ * Uses Ant Design Tabs to manage Movies, Artists, and Users.
+ * Protected by Admin check.
+ */
 function Admin() {
-  const [activeTab, setActiveTab] = useState('1');
+  const [activeTab, setActiveTab] = useState('1'); // '1' = Movies, '2' = Artists, '3' = Users
   const { user } = useSelector((state) => state.users);
   const navigate = useNavigate();
 

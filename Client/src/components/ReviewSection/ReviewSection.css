@@ -1,0 +1,310 @@
+/* ReviewSection.css - Premium IMDb-Clone Style */
+
+.reviews-container {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  margin-top: 40px;
+  width: 100%;
+}
+
+/* Header */
+.reviews-header-block {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: none; /* Removed bottom border for cleaner look */
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reviews-label {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--imdb-accent); /* IMDb Yellow */
+  border-left: 4px solid var(--imdb-accent);
+  padding-left: 12px;
+  line-height: 1;
+}
+
+.reviews-count {
+  font-size: 1rem;
+  color: #888;
+  font-weight: 400;
+}
+
+.btn-write-review {
+  background: transparent;
+  color: var(--imdb-blue);
+  border: 1px solid rgba(87, 153, 239, 0.3);
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-write-review:hover {
+  background: rgba(87, 153, 239, 0.1);
+  border-color: var(--imdb-blue);
+}
+
+/* -- Review Form -- */
+.review-form-panel {
+  background: #1a1a1a; /* Card background */
+  padding: 24px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border: 1px solid #333;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.review-form-panel h4 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #fff;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 15px;
+}
+
+.review-input-title {
+  width: 100%;
+  background: #121212;
+  border: 1px solid #444;
+  color: #fff;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: border 0.2s;
+}
+
+.review-input-content {
+  width: 100%;
+  background: #121212;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  transition: border 0.2s;
+}
+
+.review-input-title:focus,
+.review-input-content:focus {
+  outline: none;
+  border-color: var(--imdb-accent);
+}
+
+.form-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.spoiler-checkbox {
+  color: #aaa;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.spoiler-checkbox input {
+  accent-color: var(--imdb-accent);
+  width: 16px;
+  height: 16px;
+}
+
+.btn-submit {
+  background: var(--imdb-accent);
+  color: #000;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 4px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.btn-submit:hover {
+  background: #e3b615;
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-prompt-banner {
+  background: #1a1a1a;
+  border-left: 4px solid var(--imdb-accent);
+  padding: 15px;
+  text-align: left;
+  margin-bottom: 30px;
+  color: #ddd;
+}
+
+.login-prompt-banner a {
+  color: var(--imdb-blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-prompt-banner a:hover {
+  text-decoration: underline;
+}
+
+/* -- Reviews Feed -- */
+.reviews-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-card-item {
+  background: #1a1a1a; /* Card bg */
+  border: 1px solid #333;
+  border-radius: 8px; /* Rounded corners */
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.2s;
+}
+
+.review-card-item:hover {
+  border-color: #444;
+}
+
+.review-meta-header {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.review-title-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.featured-star {
+  background: #fff;
+  color: #000;
+  font-weight: bold;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.review-author-line {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.author-name {
+  color: var(--imdb-blue);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.author-name:hover {
+  text-decoration: underline;
+}
+
+.review-date {
+  color: #666;
+}
+
+.review-body {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #ddd; /* Light gray text */
+  margin-bottom: 16px;
+  position: relative;
+  word-wrap: break-word;
+}
+
+/* Spoiler handling */
+.spoiler-blur p {
+  filter: blur(8px);
+  opacity: 0.3;
+  user-select: none;
+}
+
+.spoiler-warning {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+}
+
+.spoiler-warning span {
+  background: #d00;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.review-footer-actions {
+  border-top: 1px solid #333;
+  padding-top: 12px;
+  display: flex;
+  gap: 20px;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s;
+}
+
+.text-btn:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.no-reviews-msg {
+  color: #888;
+  font-style: italic;
+  padding: 20px 0;
+}

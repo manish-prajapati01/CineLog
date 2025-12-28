@@ -13,11 +13,14 @@ const Profile = () => {
   const { user } = useSelector((state) => state.users);
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('ratings');
+  // Dashboard State
+  const [activeTab, setActiveTab] = useState('ratings'); // Controls which section is visible (ratings/reviews/watchlist)
   const [ratings, setRatings] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // User Stats Overview
   const [stats, setStats] = useState({
     totalRatings: 0,
     totalReviews: 0,

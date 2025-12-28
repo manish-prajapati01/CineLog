@@ -12,6 +12,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // Form State: Stores email/password input
   const [formData, setFormData] = useState({
     email: '',
     password: '',

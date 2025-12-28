@@ -1,0 +1,156 @@
+/* FeaturedSection.css */
+
+.featured-section {
+  max-width: 1280px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+/* Header */
+.section-header-wrapper {
+  margin-bottom: 20px;
+}
+
+.section-header-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.section-title-bar {
+  width: 4px;
+  height: 32px;
+  background-color: var(--accent-primary);
+  border-radius: 4px;
+}
+
+.section-header-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-title {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+  transition: color 0.2s;
+}
+
+.section-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.section-chevron {
+  font-size: 2rem;
+  color: var(--text-primary);
+  transition:
+    color 0.2s,
+    transform 0.2s;
+  line-height: 1;
+  margin-top: -4px;
+}
+
+.section-header-link:hover .section-title,
+.section-header-link:hover .section-chevron {
+  color: var(--accent-primary);
+}
+
+/* Carousel */
+.carousel-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding-bottom: 20px; /* Space for shadow */
+  /* Hide scrollbar but keep functionality */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  width: 100%;
+}
+
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-item {
+  flex: 0 0 160px; /* Mobile width */
+  height: auto;
+}
+
+@media (min-width: 768px) {
+  .carousel-item {
+    flex: 0 0 190px;
+  }
+}
+
+/* Controls */
+.carousel-control {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 64px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  border-radius: 4px;
+  opacity: 0;
+  transition:
+    opacity 0.3s,
+    background 0.2s;
+}
+
+.carousel-container:hover .carousel-control {
+  opacity: 1;
+}
+
+.carousel-control:hover {
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--accent-primary);
+}
+
+.carousel-control.left {
+  left: -24px;
+}
+
+.carousel-control.right {
+  right: -24px;
+}
+
+/* Skeleton */
+.carousel-item.skeleton {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  aspect-ratio: 2/3;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}

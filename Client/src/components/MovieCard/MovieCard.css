@@ -1,192 +1,185 @@
-/* MovieCard Styles */
+/* MovieCard.css - IMDb Style */
 
 .movie-card {
-  display: block;
-  text-decoration: none;
-  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  background: var(--color-bg-card);
-  transition: all var(--transition-normal);
+  height: 100%;
+  transition:
+    transform var(--transition-normal),
+    box-shadow var(--transition-normal);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  text-decoration: none;
 }
 
 .movie-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Card Poster */
+/* --- Poster Section --- */
 .card-poster {
   position: relative;
   aspect-ratio: 2/3;
+  width: 100%;
   overflow: hidden;
-  background: var(--color-bg-tertiary);
+  background-color: var(--color-bg-tertiary);
 }
 
 .card-poster img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--transition-slow);
+  transition: opacity 0.2s;
 }
 
 .movie-card:hover .card-poster img {
-  transform: scale(1.08);
+  opacity: 0.9;
 }
 
-.no-poster {
-  width: 100%;
-  height: 100%;
+/* Bookmark/Watchlist Ribbon (Top Left) */
+.card-watchlist-btn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  border: none;
+  cursor: pointer;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
+  color: #fff;
+  font-size: 1.2rem;
+  transition: all 0.2s;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%);
 }
 
-.no-poster span {
-  font-size: 3rem;
-  opacity: 0.5;
+.card-watchlist-btn:hover {
+  background: rgba(245, 197, 24, 0.8); /* IMDb Yellow transparent */
+  color: #000;
 }
 
-.no-poster p {
-  font-size: var(--font-size-sm);
-  margin: 0;
+.card-watchlist-btn.added {
+  background: var(--color-imdb-yellow);
+  color: #000;
 }
 
-/* Card Overlay */
-.card-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    transparent 50%,
-    rgba(0, 0, 0, 0.9) 100%
-  );
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: var(--space-8);
-}
-
-.movie-card:hover .card-overlay {
-  opacity: 1;
-}
-
-.overlay-content {
-  transform: translateY(20px);
-  transition: transform var(--transition-normal);
-}
-
-.movie-card:hover .overlay-content {
-  transform: translateY(0);
-}
-
-.view-details {
-  background: var(--gradient-teal);
-  color: var(--color-primary-dark);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-}
-
-/* Rating Circle Position */
-.card-rating {
-  position: absolute;
-  bottom: -16px;
-  left: var(--space-3);
-  z-index: 2;
-}
-
-/* Media Type Badge */
-.media-type-badge {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.media-type-badge.movie {
-  background: rgba(1, 180, 228, 0.9);
-  color: var(--color-primary-dark);
-}
-
-.media-type-badge.tv {
-  background: rgba(144, 206, 161, 0.9);
-  color: var(--color-primary-dark);
-}
-
-/* Card Info */
+/* --- Content Section --- */
 .card-info {
-  padding: var(--space-5) var(--space-3) var(--space-3);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 6px;
 }
 
-.card-title {
-  font-size: var(--font-size-base);
+/* Rating Row */
+.card-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #ccc;
+  margin-bottom: 4px;
+}
+
+.rating-star {
+  color: var(--color-imdb-yellow);
+  font-size: 0.9rem;
+}
+
+.rating-value {
   font-weight: 600;
+  color: #fff;
+}
+
+.rating-count {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Title */
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 500;
   color: var(--color-text-primary);
-  margin: 0 0 var(--space-1) 0;
+  line-height: 1.3;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.3;
 }
 
-.card-year {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+.movie-card:hover .card-title {
+  text-decoration: underline;
 }
 
-/* Size Variants */
-.movie-card.small .card-poster {
-  aspect-ratio: 2/3;
+/* Actions Row (Bottom) */
+.card-actions {
+  margin-top: auto;
+  padding-top: 10px;
 }
 
+.watchlist-btn-text {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--color-accent-blue);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 8px 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.watchlist-btn-text:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.watchlist-btn-text svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Trailer Button (Optional, usually visible on hover) */
+.trailer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: none;
+  font-size: 0.85rem;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: color 0.2s;
+  margin-top: 4px;
+}
+
+.trailer-btn:hover {
+  color: #fff;
+}
+
+/* --- Size Variants --- */
 .movie-card.small .card-title {
-  font-size: var(--font-size-sm);
+  font-size: 0.85rem;
 }
 
 .movie-card.large .card-title {
-  font-size: var(--font-size-lg);
-}
-
-/* Animation on load */
-.movie-card {
-  opacity: 0;
-  animation: fadeIn 0.5s ease forwards;
-}
-
-.movie-card:nth-child(1) {
-  animation-delay: 0.05s;
-}
-.movie-card:nth-child(2) {
-  animation-delay: 0.1s;
-}
-.movie-card:nth-child(3) {
-  animation-delay: 0.15s;
-}
-.movie-card:nth-child(4) {
-  animation-delay: 0.2s;
-}
-.movie-card:nth-child(5) {
-  animation-delay: 0.25s;
-}
-.movie-card:nth-child(6) {
-  animation-delay: 0.3s;
-}
-.movie-card:nth-child(7) {
-  animation-delay: 0.35s;
-}
-.movie-card:nth-child(8) {
-  animation-delay: 0.4s;
+  font-size: 1.1rem;
 }

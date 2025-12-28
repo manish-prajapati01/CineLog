@@ -1,6 +1,6 @@
 /**
- * Navbar Component
- * Dark theme navigation with search
+ * Navbar Component (IMDb Clone)
+ * Features: Yellow Logo, Mega Menu, Centered Search, User Actions
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -19,37 +19,50 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const searchRef = useRef(null);
 
-  // Handle scroll effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // Search Filters
+  const searchFilters = [
+    { key: 'multi', label: 'All' },
+    { key: 'movie', label: 'Movies' },
+    { key: 'tv', label: 'TV Shows' },
+    { key: 'person', label: 'Celebs' },
+  ];
+  const [searchCategory, setSearchCategory] = useState('multi');
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const searchDropdownRef = useRef(null);
 
-  // Close search results on click outside
+  // Close menus on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowResults(false);
+      }
+      if (
+        searchDropdownRef.current &&
+        !searchDropdownRef.current.contains(e.target)
+      ) {
+        setSearchDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced search
+  // Close mega menu when route changes
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location]);
+
+  // Debounced search: Waits 300ms after user stops typing to fetch results
+  // This prevents making API calls for every single keystroke.
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (searchQuery.trim().length >= 2) {
         try {
           const data = await searchAPI.multiSearch(searchQuery);
-          setSearchResults(data.results?.slice(0, 8) || []);
+          setSearchResults(data.results?.slice(0, 6) || []);
           setShowResults(true);
         } catch (error) {
           console.error('Search error:', error);
@@ -70,229 +83,271 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  const handleResultClick = (item) => {
-    setShowResults(false);
-    setSearchQuery('');
-    if (item.mediaType === 'movie') {
-      navigate(`/movie/${item.id}`);
-    } else if (item.mediaType === 'tv') {
-      navigate(`/tv/${item.id}`);
-    } else if (item.mediaType === 'person') {
-      navigate(`/person/${item.id}`);
-    }
-  };
-
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      navigate(
+        `/search?q=${encodeURIComponent(searchQuery)}&type=${searchCategory}`,
+      );
       setShowResults(false);
     }
   };
 
   return (
-    <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
-      <div className='navbar-container'>
-        {/* Logo */}
-        <Link to='/' className='navbar-logo'>
-          <span className='logo-icon'>🎬</span>
-          <span className='logo-text'>
-            Cine<span className='text-gradient'>Log</span>
-          </span>
-        </Link>
-
-        {/* Navigation Links */}
-        <div className={`navbar-links ${mobileMenuOpen ? 'open' : ''}`}>
-          <Link to='/' className={location.pathname === '/' ? 'active' : ''}>
-            Home
+    <>
+      <nav className='navbar'>
+        <div className='navbar-container'>
+          {/* 1. Logo */}
+          <Link to='/' className='navbar-logo'>
+            CineLog
           </Link>
 
-          {/* Movies Dropdown */}
-          <div className='nav-dropdown'>
-            <span
-              className={`nav-dropdown-trigger ${location.pathname.startsWith('/movies') ? 'active' : ''}`}
-            >
-              Movies ▾
-            </span>
-            <div className='nav-dropdown-menu'>
-              <Link to='/movies?region=indian'>
-                <img
-                  src='https://flagcdn.com/20x15/in.png'
-                  srcSet='https://flagcdn.com/40x30/in.png 2x'
-                  width='20'
-                  height='15'
-                  alt='India'
-                  style={{ marginRight: '8px', verticalAlign: 'middle' }}
-                />
-                Indian Movies
-              </Link>
-              <Link to='/movies?region=hollywood'>🌍 Hollywood Movies</Link>
+          {/* 2. Menu Button (Triggers Mega Menu) */}
+          <button
+            className={`menu-btn ${menuOpen ? 'active' : ''}`}
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <div className='menu-icon'>
+              <span></span>
+              <span></span>
+              <span></span>
             </div>
-          </div>
+            <span>Menu</span>
+          </button>
 
-          {/* TV Shows Dropdown */}
-          <div className='nav-dropdown'>
-            <span
-              className={`nav-dropdown-trigger ${location.pathname.startsWith('/tv') ? 'active' : ''}`}
-            >
-              TV Shows ▾
-            </span>
-            <div className='nav-dropdown-menu'>
-              <Link to='/tv?region=indian'>
-                <img
-                  src='https://flagcdn.com/20x15/in.png'
-                  srcSet='https://flagcdn.com/40x30/in.png 2x'
-                  width='20'
-                  height='15'
-                  alt='India'
-                  style={{ marginRight: '8px', verticalAlign: 'middle' }}
-                />
-                Indian TV Shows
-              </Link>
-              <Link to='/tv?region=hollywood'>🌍 Hollywood TV Shows</Link>
-            </div>
-          </div>
-          {user && (
-            <Link
-              to='/watchlist'
-              className={location.pathname === '/watchlist' ? 'active' : ''}
-            >
-              Watchlist
-            </Link>
-          )}
-        </div>
-
-        {/* Search */}
-        <div className='navbar-search' ref={searchRef}>
-          <form onSubmit={handleSearchSubmit}>
-            <div className='search-input-wrapper'>
-              <svg
-                className='search-icon'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-              >
-                <circle cx='11' cy='11' r='8' />
-                <path d='m21 21-4.35-4.35' />
-              </svg>
-              <input
-                type='text'
-                placeholder='Search movies, TV shows, people...'
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => searchResults.length > 0 && setShowResults(true)}
-              />
-              {searchQuery && (
-                <button
-                  type='button'
-                  className='clear-btn'
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSearchResults([]);
-                  }}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </form>
-
-          {/* Search Results Dropdown */}
-          {showResults && searchResults.length > 0 && (
-            <div className='search-results'>
-              {searchResults.map((item) => (
+          {/* 3. Search Bar */}
+          <div className='navbar-search' ref={searchRef}>
+            <form onSubmit={handleSearchSubmit}>
+              <div className='search-input-wrapper'>
                 <div
-                  key={`${item.mediaType}-${item.id}`}
-                  className='search-result-item'
-                  onClick={() => handleResultClick(item)}
+                  className='search-category'
+                  ref={searchDropdownRef}
+                  onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
                 >
-                  <img
-                    src={
-                      item.posterPath || item.profilePath || '/placeholder.jpg'
-                    }
-                    alt=''
-                    className='result-poster'
-                  />
-                  <div className='result-info'>
-                    <span className='result-title'>
-                      {item.title || item.name}
-                    </span>
-                    <span className='result-meta'>
-                      <span className={`media-badge ${item.mediaType}`}>
-                        {item.mediaType === 'movie'
-                          ? '🎬 Movie'
-                          : item.mediaType === 'tv'
-                            ? '📺 TV'
-                            : '👤 Person'}
-                      </span>
-                      {item.releaseDate || item.firstAirDate ? (
-                        <span className='result-year'>
-                          {new Date(
-                            item.releaseDate || item.firstAirDate,
-                          ).getFullYear()}
-                        </span>
-                      ) : null}
-                    </span>
-                  </div>
+                  {searchFilters.find((f) => f.key === searchCategory)?.label ||
+                    'All'}
+                  {searchDropdownOpen && (
+                    <div className='search-category-dropdown'>
+                      {searchFilters.map((filter) => (
+                        <div
+                          key={filter.key}
+                          className={`search-category-item ${searchCategory === filter.key ? 'active' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSearchCategory(filter.key);
+                            setSearchDropdownOpen(false);
+                          }}
+                        >
+                          {filter.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
-              <div
-                className='search-results-footer'
-                onClick={handleSearchSubmit}
-              >
-                See all results for &quot;{searchQuery}&quot;
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* User Menu */}
-        <div className='navbar-user'>
-          {user ? (
-            <div className='user-menu'>
-              <div className='user-avatar'>
-                {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} />
-                ) : (
-                  <span>{user.name?.charAt(0).toUpperCase()}</span>
-                )}
-              </div>
-              <div className='user-dropdown'>
-                <div className='dropdown-header'>
-                  <span className='dropdown-name'>{user.name}</span>
-                  <span className='dropdown-email'>{user.email}</span>
-                </div>
-                <div className='dropdown-divider' />
-                <Link to='/profile'>Profile</Link>
-                {user.role === 'admin' && <Link to='/admin'>Admin Panel</Link>}
-                <div className='dropdown-divider' />
-                <button onClick={handleLogout} className='logout-btn'>
-                  Logout
+                <input
+                  type='text'
+                  placeholder='Search IMDb'
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() =>
+                    searchResults.length > 0 && setShowResults(true)
+                  }
+                />
+                <button type='submit' className='search-btn'>
+                  <svg viewBox='0 0 24 24' fill='currentColor'>
+                    <path d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z' />
+                  </svg>
                 </button>
               </div>
-            </div>
-          ) : (
-            <div className='auth-buttons'>
-              <Link to='/login' className='btn btn-ghost'>
-                Login
-              </Link>
-              <Link to='/register' className='btn btn-primary'>
-                Sign Up
-              </Link>
-            </div>
-          )}
-        </div>
+            </form>
 
-        {/* Mobile Menu Toggle */}
-        <button
-          className='mobile-menu-toggle'
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          <span className={mobileMenuOpen ? 'open' : ''} />
-        </button>
+            {/* Search Results Dropdown */}
+            {showResults && searchResults.length > 0 && (
+              <div className='search-results'>
+                {searchResults.map((item) => (
+                  <div
+                    key={`${item.mediaType}-${item.id}`}
+                    className='search-result-item'
+                    onClick={() => {
+                      setShowResults(false);
+                      setSearchQuery('');
+                      navigate(
+                        item.mediaType === 'person'
+                          ? `/person/${item.id}`
+                          : `/${item.mediaType}/${item.id}`,
+                      );
+                    }}
+                  >
+                    <img
+                      src={
+                        item.posterPath ||
+                        item.profilePath ||
+                        '/placeholder.jpg'
+                      }
+                      alt=''
+                      className='result-poster'
+                    />
+                    <div className='result-info'>
+                      <span className='result-title'>
+                        {item.title || item.name}
+                      </span>
+                      <span className='result-meta'>
+                        {item.mediaType === 'movie'
+                          ? 'Movie'
+                          : item.mediaType === 'tv'
+                            ? 'TV Series'
+                            : 'Person'}
+                        {item.releaseDate
+                          ? ` • ${item.releaseDate.split('-')[0]}`
+                          : ''}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 4. Right Actions */}
+          <div className='navbar-actions'>
+            <div className='separator'></div>
+
+            <Link to='/watchlist' className='nav-link-btn'>
+              <svg
+                width='24'
+                height='24'
+                viewBox='0 0 24 24'
+                fill='currentColor'
+                style={{ marginRight: '-4px' }}
+              >
+                <path d='M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z' />
+              </svg>
+              <span>Watchlist</span>
+            </Link>
+
+            {user ? (
+              <div className='user-menu'>
+                <button className='user-menu-trigger'>
+                  <div className='user-avatar-small'>
+                    {user.avatar ? (
+                      <img src={user.avatar} alt='User' />
+                    ) : (
+                      user.name?.[0]
+                    )}
+                  </div>
+                  <span>{user.name?.split(' ')[0]}</span>
+                  <span style={{ fontSize: '0.7em' }}>▼</span>
+                </button>
+                <div className='user-dropdown-content'>
+                  <Link to='/profile' className='dropdown-item'>
+                    Your Profile
+                  </Link>
+                  <Link to='/watchlist' className='dropdown-item'>
+                    Your Watchlist
+                  </Link>
+                  <button onClick={handleLogout} className='dropdown-item'>
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Link to='/login' className='nav-link-btn'>
+                Sign In
+              </Link>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Mega Menu Overlay */}
+      <div
+        className={`mega-menu-overlay ${menuOpen ? 'open' : ''}`}
+        onClick={() => setMenuOpen(false)}
+      >
+        <div className='mega-menu-content' onClick={(e) => e.stopPropagation()}>
+          <div className='mega-menu-grid'>
+            <div className='menu-column'>
+              <h3>🎬 Movies</h3>
+              <ul>
+                <li>
+                  <Link to='/movies?filter=popular&region=hollywood'>
+                    Popular Movies
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/movies?filter=now_playing&region=hollywood'>
+                    Now Playing
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/movies?filter=upcoming&region=hollywood'>
+                    Upcoming Releases
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/movies?filter=top_rated&region=hollywood'>
+                    Top Rated
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/movies?region=indian'>Indian Movies</Link>
+                </li>
+              </ul>
+            </div>
+
+            <div className='menu-column'>
+              <h3>📺 TV Shows</h3>
+              <ul>
+                <li>
+                  <Link to='/tv?filter=popular&region=hollywood'>
+                    Popular TV Shows
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/tv?filter=airing_today&region=hollywood'>
+                    Airing Today
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/tv?filter=upcoming&region=hollywood'>
+                    Upcoming TV Shows
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/tv?filter=top_rated&region=hollywood'>
+                    Top Rated TV Shows
+                  </Link>
+                </li>
+                <li>
+                  <Link to='/tv?region=indian'>Indian TV Shows</Link>
+                </li>
+              </ul>
+            </div>
+
+            <div className='menu-column'>
+              <h3>🎭 Genres</h3>
+              <ul>
+                <li>
+                  <Link to='/movies?genre=28&region=hollywood'>Action</Link>
+                </li>
+                <li>
+                  <Link to='/movies?genre=35&region=hollywood'>Comedy</Link>
+                </li>
+                <li>
+                  <Link to='/movies?genre=18&region=hollywood'>Drama</Link>
+                </li>
+                <li>
+                  <Link to='/movies?genre=27&region=hollywood'>Horror</Link>
+                </li>
+                <li>
+                  <Link to='/movies?genre=10749&region=hollywood'>Romance</Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
-    </nav>
+    </>
   );
 };
 

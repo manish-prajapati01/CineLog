@@ -1,4 +1,4 @@
-/* Movies Page Styles */
+/* Movies Page Styles - Clean & Modern */
 
 .movies-page,
 .tv-page {
@@ -10,84 +10,83 @@
 }
 
 .page-header h1 {
-  font-size: 2rem;
+  font-size: 2.5rem;
+  font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 1.5rem;
-}
-
-/* Category Tabs */
-.category-tabs {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.category-btn {
-  padding: 0.6rem 1.5rem;
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 25px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.category-btn:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-}
-
-.category-btn.active {
-  background: var(--accent-primary);
-  color: white;
-  border-color: var(--accent-primary);
-}
-
-/* Genre Filters */
-.genre-filters {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border-color);
 }
 
-.genre-btn {
-  padding: 0.4rem 1rem;
+/* Category Tabs */
+.category-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  padding: 8px 20px;
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 15px;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.category-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.category-btn.active {
+  background: var(--accent-primary);
+  color: #000;
+  border-color: var(--accent-primary);
+  font-weight: 600;
+}
+
+/* Genre Filters */
+.genre-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.genre-btn {
+  padding: 6px 14px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: 16px;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .genre-btn:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  background: #333;
+  color: var(--text-primary);
 }
 
 .genre-btn.active {
-  background: rgba(1, 180, 228, 0.2);
-  color: var(--accent-primary);
-  border-color: var(--accent-primary);
+  background: var(--accent-blue);
+  color: white;
 }
 
 /* Movies Grid */
 .movies-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1.5rem;
-}
-
-/* Content Section */
-.content-section {
-  margin-top: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 24px;
 }
 
 /* Pagination */
@@ -95,23 +94,25 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1.5rem;
-  margin-top: 3rem;
+  gap: 1rem;
+  margin-top: 4rem;
   padding: 1rem;
 }
 
 .pagination button {
-  padding: 0.75rem 1.5rem;
+  padding: 10px 20px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .pagination button:hover:not(:disabled) {
   background: var(--accent-primary);
+  color: #000;
   border-color: var(--accent-primary);
 }
 
@@ -122,37 +123,162 @@
 
 .pagination span {
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .no-results {
   text-align: center;
-  padding: 3rem;
+  padding: 4rem;
   color: var(--text-secondary);
   font-size: 1.2rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .movies-page,
   .tv-page {
-    padding: 90px 1rem 2rem;
+    padding: 80px 1rem 2rem;
   }
 
   .movies-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
   }
 
   .page-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
+  }
+}
+
+/* Advanced Filter Bar Styling */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  padding: 16px 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-wrap: wrap;
+  position: relative; /* Create stacking context */
+  z-index: 100; /* Ensure it stays above grid content */
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filter-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.select-wrapper {
+  position: relative;
+  min-width: 160px;
+}
+
+.filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(30, 30, 30, 0.95) 0%,
+    rgba(20, 20, 20, 0.95) 100%
+  );
+  color: var(--text-primary);
+  border: 1.5px solid rgba(245, 197, 24, 0.3);
+  border-radius: 10px;
+  padding: 12px 40px 12px 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.filter-select:hover {
+  border-color: var(--accent-primary);
+  background: linear-gradient(
+    135deg,
+    rgba(35, 35, 35, 1) 0%,
+    rgba(25, 25, 25, 1) 100%
+  );
+  box-shadow: 0 4px 16px rgba(245, 197, 24, 0.2);
+  transform: translateY(-1px);
+}
+
+.filter-select:focus {
+  border-color: var(--accent-primary);
+  box-shadow:
+    0 0 0 3px rgba(245, 197, 24, 0.15),
+    0 4px 20px rgba(245, 197, 24, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Ensure options are dark with enhanced styling */
+.filter-select option {
+  background-color: #1a1a1a;
+  color: var(--text-primary);
+  padding: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.filter-select option:hover {
+  background-color: #252525;
+}
+
+/* Custom Arrow with animation */
+.select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent-primary);
+  font-size: 0.75rem;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 4px rgba(245, 197, 24, 0.3));
+}
+
+.filter-select:hover + .select-arrow {
+  color: var(--accent-primary);
+  transform: translateY(-50%) scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(245, 197, 24, 0.5));
+}
+
+.filter-select:focus + .select-arrow {
+  transform: translateY(-50%) rotate(180deg);
+  color: var(--accent-primary);
+  filter: drop-shadow(0 0 10px rgba(245, 197, 24, 0.6));
+}
+
+/* Responsive adjustments for filters */
+@media (max-width: 768px) {
+  .filter-bar {
+    padding: 12px;
+    gap: 16px;
   }
 
-  .category-tabs {
-    gap: 0.5rem;
+  .filter-group {
+    flex: 1;
+    min-width: 200px;
   }
 
-  .category-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
+  .select-wrapper {
+    flex: 1;
   }
 }

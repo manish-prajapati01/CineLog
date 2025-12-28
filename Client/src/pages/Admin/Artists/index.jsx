@@ -5,8 +5,11 @@ import { useDispatch } from 'react-redux';
 import { setLoading } from '../../../redux/loadersSlice';
 import { DeleteArtist, GetAllArtists } from '../../../apis/artists';
 import { getDateFormat } from '../../../helpers';
-import PropTypes from 'prop-types';
 
+/**
+ * Admin Artists Page
+ * Manage artists (add, edit, delete).
+ */
 function Artists() {
   const [artists, setArtists] = useState([]);
   const dispatch = useDispatch();
@@ -146,8 +149,5 @@ function Artists() {
     </div>
   );
 }
-Artists.propTypes = {
-  selectedArtist: PropTypes.string.isRequired,
-};
 
 export default Artists;

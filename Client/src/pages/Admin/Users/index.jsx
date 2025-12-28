@@ -1,9 +1,9 @@
-import React from 'react'
-
+/**
+ * Admin Users Page
+ * Placeholder for future user management features.
+ */
 function Users() {
-  return (
-    <div>Users</div>
-  )
+  return <div>Users</div>;
 }
 
-export default Users
+export default Users;

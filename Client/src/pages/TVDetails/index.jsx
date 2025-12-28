@@ -1,17 +1,18 @@
-/**
- * TVDetails - Single TV show page
- */
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import {
-  MovieCard,
-  RatingCircle,
-  MovieDetailsSkeleton,
-} from '../../components';
 import tvService from '../../services/tvService';
 import api from '../../services/api';
+import {
+  MovieDetailsSkeleton,
+  CastList,
+  ReviewSection,
+  VideoModal,
+  RatingModal,
+  BackButton,
+} from '../../components';
 import '../MovieDetails/MovieDetails.css';
+import './TVDetails.css';
 
 const TVDetails = () => {
   const { id } = useParams();
@@ -24,15 +25,18 @@ const TVDetails = () => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userRating, setUserRating] = useState(0);
-  const [savedRating, setSavedRating] = useState(0); // Added missing state
   const [inWatchlist, setInWatchlist] = useState(false);
-  const [showTrailer, setShowTrailer] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+
+  // Season/Episode State
+  const [activeSeason, setActiveSeason] = useState(1);
+  const [activeSeasonData, setActiveSeasonData] = useState(null);
+
+  // Video Modal State
+  const [playTrailer, setPlayTrailer] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState([]);
-  const [reviewText, setReviewText] = useState('');
-  const [reviewLoading, setReviewLoading] = useState(false);
-  const [hasReviewed, setHasReviewed] = useState(false);
 
   useEffect(() => {
     const fetchShow = async () => {
@@ -54,53 +58,58 @@ const TVDetails = () => {
         setLoading(false);
       }
     };
-    fetchShow();
-    window.scrollTo(0, 0);
+    if (id) {
+      fetchShow();
+      window.scrollTo(0, 0);
+    }
   }, [id]);
 
-  // Check if in watchlist
-  useEffect(() => {
-    const checkWatchlist = async () => {
-      if (!user) return;
-      try {
-        const res = await api.get(`/watchlist/check/${id}/tv`);
-        setInWatchlist(res.data?.inWatchlist || res.inWatchlist || false);
-      } catch (error) {
-        console.error('Error checking watchlist:', error);
-      }
-    };
-    if (user && id) checkWatchlist();
-  }, [id, user]);
-
-  // Fetch reviews
+  // Fetch reviews separate effect
   useEffect(() => {
     const fetchReviews = async () => {
+      if (!id) return;
       try {
         const res = await api.get(`/reviews/${id}/tv`);
-        const reviewList = res?.data || res || [];
-        setReviews(reviewList);
-        if (user && Array.isArray(reviewList)) {
-          const userReview = reviewList.find(
-            (r) => r.userId?._id === user.id || r.userId === user.id,
-          );
-          setHasReviewed(!!userReview);
-        }
+        setReviews(res?.data || res || []);
       } catch (error) {
-        console.error('Error fetching reviews:', error);
+        console.warn('Review fetch error', error);
       }
     };
-    if (id) fetchReviews();
+    fetchReviews();
+  }, [id]);
+
+  // Check watchlist & User Rating
+  useEffect(() => {
+    const checkUserData = async () => {
+      if (!user || !id) return;
+      try {
+        const [watchlistRes, ratingRes] = await Promise.all([
+          api.get(`/watchlist/check/${id}/tv`),
+          api.get(`/ratings/user/${id}/tv`),
+        ]);
+
+        setInWatchlist(
+          watchlistRes.data?.inWatchlist || watchlistRes.inWatchlist || false,
+        );
+
+        const score = ratingRes?.data?.score;
+        if (score) setUserRating(score);
+      } catch (error) {
+        console.warn('User data fetch error', error);
+      }
+    };
+    checkUserData();
   }, [id, user]);
 
-  const trailer = videos.find(
-    (v) => v.type === 'Trailer' && v.site === 'YouTube',
-  );
-  const creators = show?.created_by || [];
-  const cast = credits?.cast?.slice(0, 10) || [];
+  const handleReviewSubmitted = (newReview) => {
+    setReviews([newReview, ...reviews]);
+  };
 
   const handleAddToWatchlist = async () => {
-    if (!user) return alert('Please login to add to watchlist');
-
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     try {
       if (inWatchlist) {
         await api.delete(`/watchlist/${id}/tv`);
@@ -115,352 +124,406 @@ const TVDetails = () => {
         setInWatchlist(true);
       }
     } catch (error) {
-      console.error('Watchlist error:', error);
-      if (error.response?.status === 400) {
-        setInWatchlist(true);
-      }
+      console.error('Watchlist toggle error', error);
     }
   };
 
-  // Fetch user's rating
+  // Fetch Season Details when activeSeason changes
   useEffect(() => {
-    const fetchUserRating = async () => {
-      if (!user || !id) return;
+    const fetchSeason = async () => {
+      if (!id) return;
       try {
-        const res = await api.get(`/ratings/user/${id}/tv`);
-        console.log('Fetched TV rating:', res);
-
-        const score = res?.data?.score;
-
-        if (score) {
-          setUserRating(score);
-          setSavedRating(score);
-        } else {
-          setUserRating(0);
-          setSavedRating(0);
-        }
+        const res = await tvService.getTVSeason(id, activeSeason);
+        setActiveSeasonData(res.data);
       } catch (error) {
-        console.error('Error fetching user rating:', error);
+        console.error('Error fetching season:', error);
       }
     };
-    fetchUserRating();
-  }, [id, user]);
+    fetchSeason();
+  }, [id, activeSeason]);
 
-  const handleRatingSelect = (rating) => {
-    if (!user) return alert('Please login to rate');
-    setUserRating(rating);
-  };
-
-  const handleSubmitRating = async () => {
-    if (!userRating) return;
-
-    try {
-      await api.post('/ratings', {
-        tmdbId: parseInt(id),
-        mediaType: 'tv',
-        score: userRating,
-        title: show.name,
-        posterPath: show.poster_path,
-      });
-      setSavedRating(userRating);
-    } catch (error) {
-      console.error('Rating error:', error);
-      alert('Failed to save rating');
-    }
-  };
-
-  const handleSubmitReview = async (e) => {
-    e.preventDefault();
-    if (!user) {
-      alert('Please login to write a review');
-      return;
-    }
-    if (!reviewText.trim()) return;
-
-    setReviewLoading(true);
-    try {
-      const res = await api.post('/reviews', {
-        tmdbId: parseInt(id),
-        mediaType: 'tv',
-        title: reviewText.substring(0, 50),
-        content: reviewText,
-        movieTitle: show.name,
-        posterPath: show.poster_path,
-      });
-      const newReview = res?.data?.data || res?.data || res;
-      setReviews([newReview, ...reviews]);
-      setReviewText('');
-      setHasReviewed(true);
-    } catch (error) {
-      console.error('Review error:', error);
-      alert(error.message || 'Error submitting review');
-    } finally {
-      setReviewLoading(false);
-    }
+  const handleSeasonClick = (seasonNum) => {
+    setActiveSeason(seasonNum);
   };
 
   if (loading) return <MovieDetailsSkeleton />;
   if (!show) return <div className='error-state'>TV Show not found</div>;
 
-  const backdropUrl = show.backdrop_path
-    ? `https://image.tmdb.org/t/p/original${show.backdrop_path}`
-    : null;
-  const posterUrl = show.poster_path
-    ? `https://image.tmdb.org/t/p/w500${show.poster_path}`
-    : '/placeholder-poster.jpg';
+  const trailer =
+    videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube') ||
+    videos[0];
+  const creators = show?.created_by || [];
+  const cast = credits?.cast?.slice(0, 15) || [];
+
+  // OMDb Fallback data (simulated/mapped)
+  const imdbRating = show.vote_average;
+  const imdbVotes = show.vote_count;
+
+  const certification = show.content_ratings?.results?.find(
+    (r) => r.iso_3166_1 === 'US',
+  )?.rating;
 
   return (
-    <div className='movie-details'>
-      {/* Back Button */}
-      <button className='back-button' onClick={() => navigate(-1)}>
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width='24'
-          height='24'
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-        >
-          <path d='M19 12H5M12 19l-7-7 7-7' />
-        </svg>
-      </button>
-
-      {/* Backdrop */}
-      <div
-        className='details-backdrop'
-        style={{ backgroundImage: `url(${backdropUrl})` }}
-      >
-        <div className='backdrop-overlay' />
-      </div>
-
-      {/* Trailer Modal */}
-      {showTrailer && trailer && (
-        <div className='trailer-modal' onClick={() => setShowTrailer(false)}>
-          <div className='trailer-content' onClick={(e) => e.stopPropagation()}>
-            <button
-              className='close-trailer'
-              onClick={() => setShowTrailer(false)}
-            >
-              ×
-            </button>
-            <iframe
-              src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1`}
-              title='Trailer'
-              allowFullScreen
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className='details-content'>
-        <div className='details-poster'>
-          <img src={posterUrl} alt={show.name} />
-        </div>
-
-        <div className='details-info'>
-          <h1 className='details-title'>
-            {show.name}
-            <span className='details-year'>
-              ({show.first_air_date?.substring(0, 4)})
-            </span>
-          </h1>
-
-          <div className='details-meta'>
-            <span className='meta-rating'>
-              <RatingCircle rating={show.vote_average} size={60} />
-            </span>
-            <span className='meta-seasons'>
-              {show.number_of_seasons} Season
-              {show.number_of_seasons > 1 ? 's' : ''}
-            </span>
-            <span className='meta-episodes'>
-              {show.number_of_episodes} Episodes
-            </span>
-            <span className='meta-genres'>
-              {show.genres?.map((g) => g.name).join(', ')}
-            </span>
+    <div className='movie-details-imdb'>
+      {/* 1. HEADER SECTION */}
+      <div className='imdb-header-container'>
+        <div className='imdb-header-content'>
+          <BackButton />
+          <div className='header-top'>
+            <h1 className='header-title'>{show.name}</h1>
           </div>
 
-          {show.tagline && (
-            <p className='details-tagline'>&quot;{show.tagline}&quot;</p>
-          )}
-
-          <div className='details-actions'>
-            {trailer && (
-              <button
-                className='btn-trailer'
-                onClick={() => setShowTrailer(true)}
-              >
-                ▶ Play Trailer
-              </button>
+          <div className='header-meta-row'>
+            <span className='header-year'>
+              {show.first_air_date
+                ? show.first_air_date.substring(0, 4)
+                : 'N/A'}
+              {show.in_production
+                ? '–'
+                : show.last_air_date
+                  ? `–${show.last_air_date.substring(0, 4)}`
+                  : ''}
+            </span>
+            {certification && (
+              <span className='header-cert'>{certification}</span>
             )}
-            <button
-              className={`btn-watchlist ${inWatchlist ? 'in-watchlist' : ''}`}
-              onClick={handleAddToWatchlist}
-            >
-              {inWatchlist ? '✓ In Watchlist' : '+ Watchlist'}
-            </button>
+            <span className='header-runtime'>
+              {show.episode_run_time?.[0]
+                ? `${show.episode_run_time[0]}m`
+                : 'N/A'}
+            </span>
+            <span className='header-type'>TV Series</span>
           </div>
+        </div>
 
-          <div className='details-overview'>
-            <h3>Overview</h3>
-            <p>{show.overview}</p>
+        <div className='imdb-header-rating'>
+          <div className='rating-block'>
+            <div className='rating-label'>IMDb RATING</div>
+            <div className='rating-value'>
+              <span className='star-icon'>⭐</span>
+              <span className='score-big'>
+                {typeof imdbRating === 'number'
+                  ? imdbRating.toFixed(1)
+                  : imdbRating}
+              </span>
+              <span className='score-max'>/10</span>
+            </div>
+            <div className='rating-count'>
+              {imdbVotes ? Number(imdbVotes).toLocaleString() : ''}
+            </div>
           </div>
-
-          {creators.length > 0 && (
-            <div className='details-creators'>
-              <strong>Created by:</strong>{' '}
-              {creators.map((c) => c.name).join(', ')}
-            </div>
-          )}
-
-          {/* User Rating Section */}
-          <div className='user-rating-section'>
-            <h3>What did you think of {show.name}?</h3>
-            <div className='rating-stars'>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
-                <button
-                  key={star}
-                  className={`star ${userRating >= star ? 'active' : ''}`}
-                  onClick={() => handleRatingSelect(star)}
-                  disabled={!user}
-                  type='button'
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-
-            <div className='rating-actions'>
-              {!user ? (
-                <span className='login-prompt'>
-                  <Link to='/login'>Login</Link> to rate
-                </span>
-              ) : userRating > 0 && userRating !== savedRating ? (
-                <button
-                  className='btn-submit-rating'
-                  onClick={handleSubmitRating}
-                >
-                  Submit {userRating}/10
-                </button>
-              ) : savedRating > 0 && userRating === savedRating ? (
-                <span className='rating-status'>
-                  ✓ Your rating: {savedRating}/10
-                </span>
+          <div
+            className='rating-block user-rate'
+            onClick={() => {
+              if (!user) {
+                navigate('/login');
+              } else {
+                setShowRatingModal(true);
+              }
+            }}
+          >
+            <div className='rating-label'>YOUR RATING</div>
+            <div className='rating-value action'>
+              {userRating > 0 ? (
+                <>
+                  <span className='star-icon blue'>★</span>
+                  <span className='score-big'>{userRating}</span>
+                </>
               ) : (
-                <span
-                  className='rating-status'
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  Tap a star to rate
-                </span>
+                <>
+                  <span className='star-icon hollow'>☆</span>
+                  <span className='score-action'>Rate</span>
+                </>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Cast Section */}
-      {cast.length > 0 && (
-        <section className='cast-section'>
-          <h2>Series Cast</h2>
-          <div className='cast-grid'>
-            {cast.map((person) => (
-              <Link
-                to={`/person/${person.id}`}
-                key={person.id}
-                className='cast-card'
-              >
-                <img
-                  src={
-                    person.profile_path
-                      ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
-                      : '/placeholder-person.jpg'
-                  }
-                  alt={person.name}
-                />
-                <div className='cast-info'>
-                  <strong>{person.name}</strong>
-                  <span>{person.character}</span>
-                </div>
-              </Link>
-            ))}
+      <section className='imdb-hero-section'>
+        <div className='hero-poster-wrapper'>
+          <img
+            src={`https://image.tmdb.org/t/p/w500${show.poster_path}`}
+            alt={show.name}
+            className='hero-poster-img'
+          />
+          <button
+            className={`hero-watchlist-ribbon ${inWatchlist ? 'active' : ''}`}
+            onClick={handleAddToWatchlist}
+            title='Add to Watchlist'
+          >
+            {inWatchlist ? '✓' : '+'}
+          </button>
+        </div>
+
+        <div
+          className='hero-media-wrapper'
+          style={{
+            backgroundImage: `url(https://image.tmdb.org/t/p/original${show.backdrop_path})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className='hero-media-overlay'>
+            <div className='media-content-center'>
+              {trailer && (
+                <button
+                  className='play-trailer-btn-large'
+                  onClick={() => setPlayTrailer(true)}
+                >
+                  <span className='play-icon'>▶</span>
+                  <div className='play-text'>
+                    <span className='play-label'>Play Trailer</span>
+                    <span className='play-time'>2:30</span>
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
-        </section>
-      )}
-
-      {/* Reviews Section */}
-      <section className='reviews-section'>
-        <h2>Reviews</h2>
-
-        {/* Review Form */}
-        {user ? (
-          hasReviewed ? (
-            <p className='already-reviewed'>
-              ✓ You have already reviewed this show
-            </p>
-          ) : (
-            <form className='review-form' onSubmit={handleSubmitReview}>
-              <textarea
-                placeholder='Write your review (at least 10 characters)...'
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                rows={4}
-                minLength={10}
-              />
-              <button
-                type='submit'
-                disabled={reviewLoading || reviewText.trim().length < 10}
-              >
-                {reviewLoading ? 'Submitting...' : 'Submit Review'}
-              </button>
-            </form>
-          )
-        ) : (
-          <p className='login-to-review'>
-            <Link to='/login'>Login</Link> to write a review
-          </p>
-        )}
-
-        {/* Reviews List */}
-        <div className='reviews-list'>
-          {reviews.length > 0 ? (
-            reviews.map((review) => (
-              <div key={review._id} className='review-card'>
-                <div className='review-header'>
-                  <span className='review-author'>
-                    {review.userId?.name || 'Anonymous'}
-                  </span>
-                  <span className='review-date'>
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className='review-content'>{review.content}</p>
-              </div>
-            ))
-          ) : (
-            <p className='no-reviews'>
-              No reviews yet. Be the first to review!
-            </p>
-          )}
         </div>
       </section>
 
-      {/* Similar Shows */}
-      {similar.length > 0 && (
-        <section className='similar-section'>
-          <h2>Similar Shows</h2>
-          <div className='movies-grid'>
-            {similar.slice(0, 6).map((s, i) => (
-              <MovieCard key={s.id} movie={s} index={i} mediaType='tv' />
-            ))}
-          </div>
-        </section>
+      {/* Video Modal */}
+      {playTrailer && trailer && (
+        <VideoModal
+          videoKey={trailer.key}
+          title={`${show.name} - Trailer`}
+          onClose={() => setPlayTrailer(false)}
+        />
       )}
+
+      {/* 3. MAIN CONTENT GRID */}
+      <div className='imdb-content-grid'>
+        {/* LEFT COLUMN */}
+        <div className='main-column'>
+          {/* Plot & Creators */}
+          <section className='plot-section'>
+            <div className='genres-badges'>
+              {show.genres?.map((g) => (
+                <span key={g.id} className='genre-chip'>
+                  {g.name}
+                </span>
+              ))}
+            </div>
+            <p className='plot-text'>{show.overview}</p>
+
+            <div className='credits-list-simple'>
+              {creators.length > 0 && (
+                <div className='credit-row'>
+                  <span className='credit-label'>Creators</span>
+                  {creators.map((c, i) => (
+                    <span key={c.id}>
+                      <Link to={`/person/${c.id}`} className='credit-link'>
+                        {c.name}
+                      </Link>
+                      {i < creators.length - 1 && ' • '}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className='seasons-info-block'>
+            <div className='section-header-simple'>
+              <h3>Seasons</h3>
+            </div>
+
+            {/* Season Chips */}
+            <div
+              className='seasons-list-chip-container'
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+                marginTop: '12px',
+              }}
+            >
+              {Array.from({ length: show.number_of_seasons }, (_, i) => {
+                const seasonNum = i + 1;
+                const isActive = activeSeason === seasonNum;
+                return (
+                  <button
+                    key={seasonNum}
+                    className={`season-chip ${isActive ? 'active' : ''}`}
+                    onClick={() => handleSeasonClick(seasonNum)}
+                    style={{
+                      cursor: 'pointer',
+                      borderRadius: '20px',
+                      padding: '6px 16px', // Reduced padding
+                      backgroundColor: isActive ? '#f5c518' : 'transparent',
+                      color: isActive ? '#000' : '#e0e0e0', // Slightly brighter inactive text
+                      border: isActive ? '1px solid #f5c518' : '1px solid #666',
+                      fontWeight: isActive ? '700' : '500',
+                      fontSize: '0.85rem', // Slightly smaller text
+                      transition: 'all 0.2s ease',
+                      minWidth: '36px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    Season {seasonNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Episode Guide / List */}
+            {activeSeasonData && (
+              <div className='episodes-list-container'>
+                <h4 className='season-heading'>
+                  Season {activeSeason}{' '}
+                  <span className='episode-count-sub'>
+                    ({activeSeasonData.episodes?.length} episodes)
+                  </span>
+                </h4>
+
+                <div className='episodes-grid'>
+                  {activeSeasonData.episodes?.map((episode) => (
+                    <div key={episode.id} className='episode-card'>
+                      <div className='episode-still'>
+                        <img
+                          src={
+                            episode.still_path
+                              ? `https://image.tmdb.org/t/p/w227_and_h127_bestv2${episode.still_path}`
+                              : 'https://placehold.co/227x127?text=No+Image'
+                          }
+                          alt={episode.name}
+                        />
+                        <div className='episode-number'>
+                          S{episode.season_number} • E{episode.episode_number}
+                        </div>
+                      </div>
+                      <div className='episode-info'>
+                        <div className='episode-header'>
+                          <h5>{episode.name}</h5>
+                          <span className='episode-rating'>
+                            ⭐ {episode.vote_average?.toFixed(1)}
+                          </span>
+                        </div>
+                        <p className='episode-date'>
+                          {episode.air_date
+                            ? new Date(episode.air_date).toLocaleDateString()
+                            : 'TBA'}
+                        </p>
+                        <p className='episode-overview'>
+                          {episode.overview || 'No overview available.'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <span className='divider'></span>
+
+          {/* Cast */}
+          <CastList cast={cast} />
+
+          {/* Reviews */}
+          <ReviewSection
+            tmdbId={id}
+            mediaType='tv'
+            reviews={reviews}
+            user={user}
+            onReviewSubmitted={handleReviewSubmitted}
+            movieTitle={show.name}
+            posterPath={show.poster_path}
+          />
+        </div>
+
+        {/* RIGHT COLUMN (Sidebar) */}
+        <div className='sidebar-column'>
+          {/* More Like This */}
+          {similar && similar.length > 0 && (
+            <div className='sidebar-widget'>
+              <div className='section-header-simple text-sm'>
+                <h3>More Like This</h3>
+              </div>
+              <div className='sidebar-movies-list'>
+                {similar.slice(0, 6).map((m, index) => (
+                  <div
+                    key={`sidebar-show-${m.id}-${index}`}
+                    className='sidebar-movie-item'
+                  >
+                    <div className='sidebar-poster'>
+                      <img
+                        src={`https://image.tmdb.org/t/p/w92${m.poster_path}`}
+                        alt={m.name}
+                      />
+                    </div>
+                    <div className='sidebar-info'>
+                      <div className='mini-rating'>
+                        ⭐ {m.vote_average?.toFixed(1)}
+                      </div>
+                      <Link to={`/tv/${m.id}`} className='sidebar-title'>
+                        {m.name}
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tech Specs / Details */}
+          <div className='sidebar-widget'>
+            <div className='section-header-simple text-sm'>
+              <h3>Details</h3>
+            </div>
+            <div className='details-list'>
+              <div className='detail-item'>
+                <span className='label'>First Air Date</span>
+                <span className='value'>
+                  {new Date(show.first_air_date).toLocaleDateString()}
+                </span>
+              </div>
+              {show.networks?.length > 0 && (
+                <div className='detail-item'>
+                  <span className='label'>Network</span>
+                  <span className='value'>
+                    {show.networks.map((n) => n.name).join(', ')}
+                  </span>
+                </div>
+              )}
+              <div className='detail-item'>
+                <span className='label'>Status</span>
+                <span className='value'>{show.status}</span>
+              </div>
+              {show.production_countries?.length > 0 && (
+                <div className='detail-item'>
+                  <span className='label'>Country</span>
+                  <span className='value'>
+                    {show.production_countries.map((c) => c.name).join(', ')}
+                  </span>
+                </div>
+              )}
+              {show.spoken_languages?.length > 0 && (
+                <div className='detail-item'>
+                  <span className='label'>Language</span>
+                  <span className='value'>
+                    {show.spoken_languages.map((l) => l.name).join(', ')}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Rating Modal */}
+      <RatingModal
+        isOpen={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        tmdbId={id}
+        mediaType='tv'
+        currentRating={userRating}
+        title={show.name}
+        onRatingSuccess={(score) => setUserRating(score)}
+      />
     </div>
   );
 };

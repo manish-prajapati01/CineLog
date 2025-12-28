@@ -12,6 +12,21 @@ const Review = require("../models/Review");
 
 // ======== STATIC ROUTES FIRST ========
 
+// ...existing routes...
+
+/**
+ * @route   GET /api/movies/discover
+ * @desc    Advanced movie discovery with filters (Year, Language, Genres, etc.)
+ */
+router.get("/discover", async (req, res) => {
+  try {
+    const data = await tmdb.discoverMovies(req.query);
+    res.json({ success: true, ...data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 /**
  * @route   GET /api/movies/trending
  */
@@ -30,8 +45,13 @@ router.get("/trending", async (req, res) => {
  */
 router.get("/popular", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getPopularMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+
+    const data = await tmdb.getPopularMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -58,8 +78,12 @@ router.get("/trending/india", async (req, res) => {
  */
 router.get("/indian/all", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getAllIndianMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getAllIndianMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -72,8 +96,12 @@ router.get("/indian/all", async (req, res) => {
  */
 router.get("/indian/airing", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getAiringIndianMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getAiringIndianMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -86,8 +114,12 @@ router.get("/indian/airing", async (req, res) => {
  */
 router.get("/popular/indian", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getPopularIndianMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getPopularIndianMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -100,8 +132,27 @@ router.get("/popular/indian", async (req, res) => {
  */
 router.get("/indian/upcoming", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getUpcomingIndianMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getUpcomingIndianMovies(parseInt(page), filters);
+    res.json({ success: true, ...data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/movies/indian/top_rated
+ * @desc    Get top rated Indian movies
+ */
+router.get("/indian/top_rated", async (req, res) => {
+  try {
+    const { page = 1, genre } = req.query;
+    const filters = genre ? { with_genres: genre } : {};
+    const data = await tmdb.getTopRatedIndianMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -114,8 +165,12 @@ router.get("/indian/upcoming", async (req, res) => {
  */
 router.get("/hollywood/all", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getAllHollywoodMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getAllHollywoodMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -128,8 +183,9 @@ router.get("/hollywood/all", async (req, res) => {
  */
 router.get("/hollywood/airing", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getAiringHollywoodMovies(parseInt(page));
+    const { page = 1, genre } = req.query;
+    const filters = genre ? { with_genres: genre } : {};
+    const data = await tmdb.getAiringHollywoodMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -142,8 +198,12 @@ router.get("/hollywood/airing", async (req, res) => {
  */
 router.get("/popular/hollywood", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getPopularHollywoodMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getPopularHollywoodMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -156,8 +216,27 @@ router.get("/popular/hollywood", async (req, res) => {
  */
 router.get("/hollywood/upcoming", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getUpcomingHollywoodMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getUpcomingHollywoodMovies(parseInt(page), filters);
+    res.json({ success: true, ...data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/movies/hollywood/top_rated
+ * @desc    Get top rated Hollywood movies
+ */
+router.get("/hollywood/top_rated", async (req, res) => {
+  try {
+    const { page = 1, genre } = req.query;
+    const filters = genre ? { with_genres: genre } : {};
+    const data = await tmdb.getTopRatedHollywoodMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -169,8 +248,12 @@ router.get("/hollywood/upcoming", async (req, res) => {
  */
 router.get("/now_playing", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getNowPlayingMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getNowPlayingMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -182,8 +265,12 @@ router.get("/now_playing", async (req, res) => {
  */
 router.get("/upcoming", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getUpcomingMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getUpcomingMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -195,8 +282,12 @@ router.get("/upcoming", async (req, res) => {
  */
 router.get("/top_rated", async (req, res) => {
   try {
-    const { page = 1 } = req.query;
-    const data = await tmdb.getTopRatedMovies(parseInt(page));
+    const { page = 1, genre, sort_by, language } = req.query;
+    const filters = {};
+    if (genre) filters.with_genres = genre;
+    if (sort_by) filters.sort_by = sort_by;
+    if (language) filters.language = language;
+    const data = await tmdb.getTopRatedMovies(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

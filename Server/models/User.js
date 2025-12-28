@@ -37,6 +37,15 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    activityLog: [
+      {
+        action: { type: String, required: true }, // 'rated', 'reviewed', 'watchlist'
+        targetId: { type: String, required: true }, // TMDB ID
+        targetTitle: String,
+        targetType: { type: String, enum: ["movie", "tv", "person"] },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,

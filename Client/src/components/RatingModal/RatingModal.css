@@ -1,0 +1,101 @@
+.rating-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(5px);
+}
+
+.rating-modal-content {
+  background: #1f1f1f;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 8px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+}
+
+.rating-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.rating-star-icon {
+  font-size: 3rem;
+  color: #f5c518;
+  margin-bottom: 10px;
+}
+
+.rating-header h3 {
+  color: #f5c518;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.rating-title {
+  color: #fff;
+  font-size: 1.2rem;
+  text-align: center;
+  margin: 10px 0 25px;
+  font-weight: 400;
+}
+
+.star-rating-display {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  color: #444;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    color 0.1s,
+    transform 0.1s;
+}
+
+.star-btn:hover {
+  transform: scale(1.2);
+}
+
+.star-btn.active {
+  color: #5799ef; /* IMDb Blue */
+}
+
+.rating-score-label {
+  color: #fff;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  font-weight: 600;
+}
+
+.rating-close-btn {
+  background: transparent;
+  color: #aaa;
+  border: 1px solid #444;
+  padding: 8px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rating-close-btn:hover {
+  border-color: #fff;
+  color: #fff;
+}

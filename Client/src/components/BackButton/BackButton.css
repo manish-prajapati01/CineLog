@@ -1,0 +1,33 @@
+.imdb-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: #fff; /* White text by default */
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0; /* Vertical breathing room */
+  margin-left: -8px; /* Slight offset to align strict left */
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  font-family: 'Roboto', Helvetica, Arial, sans-serif;
+}
+
+.imdb-back-btn:hover {
+  opacity: 1;
+  color: var(--imdb-accent, #f5c518);
+}
+
+.back-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.back-text {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}

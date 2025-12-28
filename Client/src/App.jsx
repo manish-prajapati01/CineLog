@@ -12,7 +12,7 @@ import './styles/design-system.css';
 import './index.css';
 
 // Components
-import { Navbar } from './components';
+import { Navbar, Footer } from './components';
 
 // Lazy load pages for code splitting
 const Home = React.lazy(() => import('./pages/Home'));
@@ -67,13 +67,14 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Layout wrapper with Navbar
+// Layout wrapper with Navbar and Footer
 const Layout = ({ children }) => (
   <div className='app-layout'>
     <Navbar />
     <main className='main-content'>
       <Suspense fallback={<PageLoader />}>{children}</Suspense>
     </main>
+    <Footer />
   </div>
 );
 
@@ -89,15 +90,18 @@ function App() {
 
   return (
     <ErrorBoundary>
+      {/* Global Loader Wrapper - Shows spinner when redux global loading is true */}
       {loading && (
         <div className='global-loader'>
           <div className='loader-spinner' />
         </div>
       )}
 
+      {/* Main Application Router */}
       <BrowserRouter>
         <Routes>
           {/* Public Routes with Navbar */}
+          {/* We wrap these pages with <Layout> so they have the Navbar and Footer */}
           <Route
             path='/'
             element={
@@ -180,6 +184,7 @@ function App() {
           />
 
           {/* Auth Routes (no navbar) */}
+          {/* These pages stand alone without the standard site navigation */}
           <Route
             path='/login'
             element={
@@ -197,7 +202,7 @@ function App() {
             }
           />
 
-          {/* 404 fallback */}
+          {/* 404 fallback - Matches any path not defined above */}
           <Route
             path='*'
             element={

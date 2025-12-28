@@ -33,6 +33,19 @@ const ratingSchema = new mongoose.Schema(
       min: 1,
       max: 10,
     },
+    // Demographic data optional for now
+    demographics: {
+      ageGroup: {
+        type: String,
+        enum: ["<18", "18-29", "30-44", "45+"],
+        default: "18-29",
+      },
+      gender: {
+        type: String,
+        enum: ["male", "female", "non-binary", "other"],
+        default: "other",
+      },
+    },
   },
   {
     timestamps: true,
