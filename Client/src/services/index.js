@@ -10,3 +10,4 @@ export { searchAPI } from './searchService';
 export { ratingsAPI } from './ratingsService';
 export { reviewsAPI } from './reviewsService';
 export { watchlistAPI } from './watchlistService';
+export { personAPI } from './personService';

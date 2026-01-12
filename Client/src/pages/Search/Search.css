@@ -1,105 +1,124 @@
-/* Search Page Styles */
+/* Search Container - Wrapper for entire search page */
+.search-container {
+  width: 100%;
+}
 
+/* Search Page Styles - Compact header/filters section */
 .search-page {
-  min-height: 100vh;
   background: var(--bg-primary);
-  padding: 90px 2rem 3rem;
+  padding: 30px 2rem 1rem;
   max-width: 1300px;
   margin: 0 auto;
 }
 
 .search-header {
   margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
 }
 
 .search-header h1 {
-  font-size: 1.75rem;
+  font-size: 1.8rem;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
+  font-weight: 600;
 }
 
 .search-query {
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 0.95rem;
   margin: 0;
 }
 
 .result-count {
   display: inline-block;
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
   color: var(--accent-primary);
-  font-size: 0.85rem;
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
 /* Filter Tabs */
 .search-filters {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: 12px;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 
 .filter-btn {
-  padding: 0.5rem 1.25rem;
+  padding: 8px 20px;
   background: var(--bg-secondary);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .filter-btn:hover {
   border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  color: var(--text-primary);
 }
 
 .filter-btn.active {
   background: var(--accent-primary);
-  color: white;
+  color: #000;
   border-color: var(--accent-primary);
+  font-weight: 600;
 }
 
 /* Search Results Container */
 .search-results {
-  margin-top: 0;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 2rem 3rem;
+  position: relative !important; /* Force relative positioning */
 }
 
 /* Results Grid */
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 24px;
 }
 
 /* Person Result Card */
 .person-result {
   background: var(--bg-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  transition: transform 0.3s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .person-result:hover {
   transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
 }
 
 .person-result img {
   width: 100%;
   aspect-ratio: 2/3;
   object-fit: cover;
+  background: var(--bg-tertiary);
 }
 
 .person-info {
-  padding: 1rem;
+  padding: 12px;
+  flex: 1;
 }
 
 .person-info strong {
   display: block;
   color: var(--text-primary);
   font-size: 1rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 4px;
 }
 
 .person-info span {
@@ -112,23 +131,25 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1.5rem;
-  margin-top: 3rem;
+  gap: 1rem;
+  margin-top: 4rem;
   padding: 1rem;
 }
 
 .pagination button {
-  padding: 0.75rem 1.5rem;
+  padding: 10px 20px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .pagination button:hover:not(:disabled) {
   background: var(--accent-primary);
+  color: #000;
   border-color: var(--accent-primary);
 }
 
@@ -139,35 +160,44 @@
 
 .pagination span {
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Empty States */
 .no-results,
 .no-query {
   text-align: center;
-  padding: 4rem 2rem;
+  padding: 5rem 2rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  margin-top: 2rem;
 }
 
 .no-results h2,
 .no-query h2 {
   color: var(--text-primary);
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
 }
 
 .no-results p,
 .no-query p {
   color: var(--text-secondary);
+  font-size: 1.1rem;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .search-page {
-    padding: 90px 1rem 2rem;
+    padding: 20px 1rem 1rem;
   }
 
   .results-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+  }
+
+  .search-results {
+    padding: 0 1rem 2rem;
   }
 }

@@ -1,18 +1,20 @@
-import { Button, Table, message } from 'antd';
+import { Button, Table, message, Input, Space, Tooltip, Avatar, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 import ArtistModalForm from './ArtistModalForm';
 import { useDispatch } from 'react-redux';
 import { setLoading } from '../../../redux/loadersSlice';
 import { DeleteArtist, GetAllArtists } from '../../../apis/artists';
 import { getDateFormat } from '../../../helpers';
-import PropTypes from 'prop-types';
+import { EditOutlined, DeleteOutlined, UserAddOutlined, SearchOutlined, UserOutlined } from '@ant-design/icons';
+import { TeamOutlined } from '@ant-design/icons';
 
 function Artists() {
   const [artists, setArtists] = useState([]);
+  const [searchText, setSearchText] = useState('');
   const dispatch = useDispatch();
   const [showArtistModal, setShowArtistModal] = useState(false);
-  //variable for selected artist for edit
   const [selectedArtist, setSelectedArtist] = useState(null);
+
   const fetchAllArtists = async () => {
     try {
       dispatch(setLoading(true));
@@ -25,7 +27,6 @@ function Artists() {
     }
   };
 
-  //Delete artist
   const deleteArtist = async (id) => {
     try {
       dispatch(setLoading(true));
@@ -39,101 +40,124 @@ function Artists() {
     }
   };
 
+  useEffect(() => {
+    fetchAllArtists();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filteredArtists = artists.filter(artist => 
+      artist.name.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   const columns = [
     {
-      title: 'Artist',
+      title: 'Profile',
       dataIndex: 'profilePic',
       render: (text, record) => {
         const imageUrl = record?.images?.[0] || '';
-        return <img className='w-20 h-20 rounded' src={imageUrl} alt='' />;
+        if (imageUrl) {
+            return <Avatar src={imageUrl} size={48} />;
+        }
+        return <Avatar icon={<UserOutlined />} size={48} />;
       },
+      width: 80,
     },
     {
       title: 'Name',
       dataIndex: 'name',
-    },
-    {
-      title: 'DOB',
-      dataIndex: 'dob',
-      render: (text) => {
-        return getDateFormat(text);
-      },
-    },
-    {
-      title: 'Debut  Year',
-      dataIndex: 'debutYear',
+      sorter: (a, b) => a.name.localeCompare(b.name),
+      render: (text) => <span style={{ fontWeight: 600, fontSize: '1rem', color: '#fff' }}>{text}</span>
     },
     {
       title: 'Profession',
       dataIndex: 'profession',
+      render: (text) => <Tag color="geekblue">{text}</Tag>
+    },
+    {
+      title: 'Debuted In',
+      dataIndex: 'debutYear',
+      render: (text) => <span style={{ color: '#aaa' }}>{text}</span>
     },
     {
       title: 'Debut Movie',
       dataIndex: 'debutMovie',
+      render: (text) => <span style={{ fontStyle: 'italic', color: '#ccc' }}>{text}</span>
+    },
+    {
+        title: 'DOB',
+        dataIndex: 'dob',
+        render: (text) => <span style={{ color: '#888' }}>{getDateFormat(text)}</span>,
     },
     {
       title: 'Action',
       dataIndex: 'action',
       render: (text, record) => {
         return (
-          <div className='flex gap-5'>
-            <svg
-              xmlns='http://www.w3.org/2000/svg'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth={1.5}
-              stroke='currentColor'
-              className='w-6 h-6'
-              onClick={() => {
-                setSelectedArtist(record);
-                setShowArtistModal(true);
-              }}
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125'
-              />
-            </svg>
-            <svg
-              xmlns='http://www.w3.org/2000/svg'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth={1.5}
-              stroke='currentColor'
-              className='w-6 h-6'
-              onClick={() => {
-                deleteArtist(record._id);
-              }}
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0'
-              />
-            </svg>
-          </div>
+          <Space size="middle">
+             <Tooltip title="Edit">
+                 <Button 
+                    type="text" 
+                    icon={<EditOutlined style={{ color: '#5799ef' }} />} 
+                    onClick={() => {
+                        setSelectedArtist(record);
+                        setShowArtistModal(true);
+                    }}
+                 />
+             </Tooltip>
+             <Tooltip title="Delete">
+                 <Button 
+                    type="text" 
+                    danger
+                    icon={<DeleteOutlined />} 
+                    onClick={() => {
+                        if(window.confirm('Are you sure you want to delete this artist?')) {
+                            deleteArtist(record._id);
+                        }
+                    }}
+                 />
+             </Tooltip>
+          </Space>
         );
       },
     },
   ];
-  useEffect(() => {
-    fetchAllArtists();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
   return (
     <div>
-      <div className=' flex justify-end mr-5'>
-        <Button
-          onClick={() => {
-            setSelectedArtist(null);
-            setShowArtistModal(true);
-          }}
-        >
-          Add Artist
-        </Button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <TeamOutlined style={{ fontSize: '24px', color: '#f5c518' }} />
+            <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Artists</h1>
+         </div>
+      
+          <Space>
+             <Input 
+                placeholder="Search artists..." 
+                prefix={<SearchOutlined style={{ color: '#888' }} />} 
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ width: 250, background: '#1f1f1f', border: 'none', color: '#fff' }}
+             />
+             <Button 
+                type="primary" 
+                icon={<UserAddOutlined />}
+                onClick={() => {
+                    setSelectedArtist(null);
+                    setShowArtistModal(true);
+                }}
+            >
+                Add Artist
+            </Button>
+          </Space>
       </div>
-      <Table dataSource={artists} columns={columns} className='m-5'></Table>
+
+      <Table 
+        dataSource={filteredArtists} 
+        columns={columns} 
+        rowKey="_id"
+        pagination={{ pageSize: 8 }}
+      />
+      
       {showArtistModal && (
         <ArtistModalForm
           showArtistModal={showArtistModal}
@@ -146,8 +170,5 @@ function Artists() {
     </div>
   );
 }
-Artists.propTypes = {
-  selectedArtist: PropTypes.string.isRequired,
-};
 
 export default Artists;

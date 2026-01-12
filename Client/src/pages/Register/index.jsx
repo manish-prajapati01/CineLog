@@ -12,6 +12,7 @@ const Register = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // Form State: Stores registration details
   const [formData, setFormData] = useState({
     name: '',
     email: '',

@@ -1,24 +1,19 @@
 /**
- * MovieDetails - Single movie page with all features
- * - Movie info, poster, backdrop
- * - Rating (user can rate 1-10)
- * - Reviews (users can write reviews)
- * - Cast & crew
- * - Similar movies
- * - Trailer modal
- * - Watchlist
- * - Parental certification
+ * MovieDetails - IMDb Layout Redesign
  */
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
-  MovieCard,
-  RatingCircle,
   MovieDetailsSkeleton,
+  CastList,
+  ReviewSection,
+  VideoModal,
+  RatingModal,
+  BackButton,
 } from '../../components';
-import movieService from '../../services/movieService';
-import api from '../../services/api';
+import { moviesAPI } from '../../services';
+import api from '../../services/api'; // Import api
 import './MovieDetails.css';
 
 const MovieDetails = () => {
@@ -26,21 +21,22 @@ const MovieDetails = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.users);
 
+  // Core Data State
   const [movie, setMovie] = useState(null);
   const [credits, setCredits] = useState(null);
   const [similar, setSimilar] = useState([]);
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState(null);
+
+  // User Interaction State
   const [userRating, setUserRating] = useState(0);
   const [inWatchlist, setInWatchlist] = useState(false);
-  const [showTrailer, setShowTrailer] = useState(false);
+  const [playTrailer, setPlayTrailer] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState([]);
-  const [reviewText, setReviewText] = useState('');
-  const [reviewLoading, setReviewLoading] = useState(false);
-  const [ratingStats, setRatingStats] = useState(null);
-  const [hasReviewed, setHasReviewed] = useState(false);
 
   // Fetch movie data
   useEffect(() => {
@@ -49,10 +45,10 @@ const MovieDetails = () => {
       try {
         const [movieRes, creditsRes, similarRes, videosRes] = await Promise.all(
           [
-            movieService.getMovieDetails(id),
-            movieService.getMovieCredits(id),
-            movieService.getSimilarMovies(id),
-            movieService.getMovieVideos(id),
+            moviesAPI.getDetails(id),
+            moviesAPI.getCredits(id),
+            moviesAPI.getSimilar(id),
+            moviesAPI.getVideos(id),
           ],
         );
         setMovie(movieRes.data);
@@ -61,104 +57,61 @@ const MovieDetails = () => {
         setVideos(videosRes.data?.results || []);
       } catch (error) {
         console.error('Error fetching movie:', error);
+        // setError(error); // Use error state
       } finally {
         setLoading(false);
       }
     };
-    fetchMovie();
-    window.scrollTo(0, 0);
+    if (id) {
+      fetchMovie();
+      window.scrollTo(0, 0);
+    }
   }, [id]);
 
-  // Fetch reviews
+  // Fetch reviews separate effect
   useEffect(() => {
     const fetchReviews = async () => {
+      if (!id) return;
       try {
         const res = await api.get(`/reviews/${id}/movie`);
-        // api.js already unwraps response.data
-        const reviewList = res?.data || res || [];
-        setReviews(reviewList);
-        // Check if current user has already reviewed
-        if (user && Array.isArray(reviewList)) {
-          const userReview = reviewList.find(
-            (r) => r.userId?._id === user.id || r.userId === user.id,
-          );
-          setHasReviewed(!!userReview);
-        }
+        setReviews(res?.data || res || []);
       } catch (error) {
-        console.error('Error fetching reviews:', error);
+        console.warn('Review fetch error', error);
       }
     };
-    if (id) fetchReviews();
-  }, [id, user]);
-
-  // Fetch rating stats
-  useEffect(() => {
-    const fetchRatingStats = async () => {
-      try {
-        const res = await api.get(`/ratings/${id}/movie`);
-        setRatingStats(res.data);
-      } catch (error) {
-        console.error('Error fetching rating stats:', error);
-      }
-    };
-    if (id) fetchRatingStats();
+    fetchReviews();
   }, [id]);
 
-  // State for saved rating to compare against
-  const [savedRating, setSavedRating] = useState(0);
-
-  // Update fetchUserRating
+  // Check watchlist & User Rating
   useEffect(() => {
-    const fetchUserRating = async () => {
+    const checkUserData = async () => {
       if (!user || !id) return;
       try {
-        // api.js returns response.data directly
-        // Backend returns: { success: true, data: { score: 8 } }
-        // So 'res' is { success: true, data: { score: 8 } }
-        const res = await api.get(`/ratings/user/${id}/movie`);
-        console.log('Fetched user rating:', res); // Log actual object
+        const [watchlistRes, ratingRes] = await Promise.all([
+          api.get(`/watchlist/check/${id}/movie`),
+          api.get(`/ratings/user/${id}/movie`),
+        ]);
 
-        // Safe extraction
-        const score = res?.data?.score;
+        setInWatchlist(
+          watchlistRes.data?.inWatchlist || watchlistRes.inWatchlist || false,
+        );
 
-        if (score) {
-          setUserRating(score);
-          setSavedRating(score);
-        } else {
-          setUserRating(0);
-          setSavedRating(0);
-        }
+        const score = ratingRes?.data?.score;
+        if (score) setUserRating(score);
       } catch (error) {
-        console.error('Error fetching user rating:', error);
+        console.warn('User data fetch error', error);
       }
     };
-    fetchUserRating();
+    checkUserData();
   }, [id, user]);
 
-  // Check if in watchlist - Optimized
-  useEffect(() => {
-    const checkWatchlist = async () => {
-      if (!user) return;
-      try {
-        const res = await api.get(`/watchlist/check/${id}/movie`);
-        setInWatchlist(res.data?.inWatchlist || res.inWatchlist || false);
-      } catch (error) {
-        console.error('Error checking watchlist:', error);
-      }
-    };
-    if (user && id) checkWatchlist();
-  }, [id, user]);
+  const handleReviewSubmitted = (newReview) => {
+    setReviews([newReview, ...reviews]);
+  };
 
-  const trailer = videos.find(
-    (v) => v.type === 'Trailer' && v.site === 'YouTube',
-  );
-  const director = credits?.crew?.find((c) => c.job === 'Director');
-  const cast = credits?.cast?.slice(0, 10) || [];
-
-  // Handle add/remove from watchlist
-  const handleAddToWatchlist = async () => {
+  const toggleWatchlist = async () => {
     if (!user) {
-      alert('Please login to add to watchlist');
+      navigate('/login');
       return;
     }
     try {
@@ -175,365 +128,318 @@ const MovieDetails = () => {
         setInWatchlist(true);
       }
     } catch (error) {
-      console.error('Watchlist error:', error);
-      // Handle "Already in watchlist" case gracefully
-      if (error.response?.status === 400) {
-        setInWatchlist(true);
-      }
-    }
-  };
-  const handleRatingSelect = (rating) => {
-    if (!user) {
-      alert('Please login to rate');
-      return;
-    }
-    setUserRating(rating); // Just update UI state
-  };
-
-  // Handle rating submission
-  const handleSubmitRating = async () => {
-    if (!userRating) return;
-
-    try {
-      console.log('Submitting rating:', { id, userRating }); // DEBUG
-      const res = await api.post('/ratings', {
-        tmdbId: parseInt(id),
-        mediaType: 'movie',
-        score: userRating,
-        title: movie.title,
-        posterPath: movie.poster_path,
-      });
-
-      console.log('Rating submission response:', res.data); // DEBUG
-
-      // API returns rating object directly, not wrapped in success
-      if (res.data?._id || res.data?.score) {
-        // Update saved state to hide button and show checkmark
-        setSavedRating(userRating);
-
-        // Refresh overall stats
-        const statsRes = await api.get(`/ratings/${id}/movie`);
-        setRatingStats(statsRes.data);
-      }
-    } catch (error) {
-      console.error('Rating error:', error);
-      alert('Failed to save rating. Please try again.');
-    }
-  };
-
-  // Handle submit review
-  const handleSubmitReview = async (e) => {
-    e.preventDefault();
-    if (!user) {
-      alert('Please login to write a review');
-      return;
-    }
-    if (!reviewText.trim()) return;
-
-    setReviewLoading(true);
-    try {
-      const res = await api.post('/reviews', {
-        tmdbId: parseInt(id),
-        mediaType: 'movie',
-        title: reviewText.substring(0, 50),
-        content: reviewText,
-        movieTitle: movie.title,
-        posterPath: movie.poster_path,
-      });
-      // api.js already unwraps response.data
-      setReviews([res?.data || res, ...reviews]);
-      setReviewText('');
-      setHasReviewed(true);
-    } catch (error) {
-      console.error('Review error:', error);
-      alert(error.message || 'Error submitting review');
-    } finally {
-      setReviewLoading(false);
+      console.error('Watchlist toggle error', error);
     }
   };
 
   if (loading) return <MovieDetailsSkeleton />;
   if (!movie) return <div className='error-state'>Movie not found</div>;
 
-  const backdropUrl = movie.backdrop_path
-    ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
-    : null;
-  const posterUrl = movie.poster_path
-    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-    : '/placeholder-poster.jpg';
+  // Get Trailer (prefer YouTube)
+  const trailer =
+    videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube') ||
+    videos[0];
 
-  // Get certification (parental guide)
-  const certification = movie.release_dates?.results
-    ?.find((r) => r.iso_3166_1 === 'US')
-    ?.release_dates?.find((d) => d.certification)?.certification;
+  // Filter Crew for Director and Writers
+  const director = credits?.crew?.find((c) => c.job === 'Director');
+  const writers = credits?.crew
+    ?.filter(
+      (c) =>
+        c.department === 'Writing' ||
+        c.job === 'Screenplay' ||
+        c.job === 'Writer',
+    )
+    .slice(0, 2);
+
+  // significant cast members only
+  const cast = credits?.cast?.slice(0, 15) || [];
+
+  // OMDb Fallback data
+  const imdbRating = movie.imdbRating || movie.vote_average;
+  const imdbVotes = movie.imdbVotes || movie.vote_count;
 
   return (
-    <div className='movie-details'>
-      {/* Back Button */}
-      <button className='back-button' onClick={() => navigate(-1)}>
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width='24'
-          height='24'
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-        >
-          <path d='M19 12H5M12 19l-7-7 7-7' />
-        </svg>
-      </button>
+    <div className='movie-details-imdb'>
+      {/* 1. HEADER SECTION (Title, Year, Rating) */}
+      <div className='imdb-header-container'>
+        <div className='imdb-header-content'>
+          <BackButton />
+          <div className='header-top'>
+            <h1 className='header-title'>{movie.title}</h1>
+          </div>
 
-      {/* Backdrop */}
-      <div
-        className='details-backdrop'
-        style={{ backgroundImage: `url(${backdropUrl})` }}
-      >
-        <div className='backdrop-overlay' />
-      </div>
-
-      {/* Trailer Modal */}
-      {showTrailer && trailer && (
-        <div className='trailer-modal' onClick={() => setShowTrailer(false)}>
-          <div className='trailer-content' onClick={(e) => e.stopPropagation()}>
-            <button
-              className='close-trailer'
-              onClick={() => setShowTrailer(false)}
-            >
-              ×
-            </button>
-            <iframe
-              src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1`}
-              title='Trailer'
-              allowFullScreen
-            />
+          <div className='header-meta-row'>
+            <span className='header-year'>
+              {new Date(movie.release_date).getFullYear()}
+            </span>
+            {movie.certification && (
+              <span className='header-cert'>{movie.certification}</span>
+            )}
+            <span className='header-runtime'>
+              {Math.floor(movie.runtime / 60)}h {movie.runtime % 60}m
+            </span>
           </div>
         </div>
-      )}
 
-      {/* Main Content */}
-      <div className='details-content'>
-        <div className='details-poster'>
-          <img src={posterUrl} alt={movie.title} />
-        </div>
-
-        <div className='details-info'>
-          <h1 className='details-title'>
-            {movie.title}
-            <span className='details-year'>
-              ({new Date(movie.release_date).getFullYear()})
-            </span>
-          </h1>
-
-          <div className='details-meta'>
-            <span className='meta-rating'>
-              <RatingCircle rating={movie.vote_average} size={60} />
-            </span>
-            {certification && (
-              <span className='meta-certification'>{certification}</span>
-            )}
-            {movie.runtime && (
-              <span className='meta-runtime'>
-                {Math.floor(movie.runtime / 60)}h {movie.runtime % 60}m
+        <div className='imdb-header-rating'>
+          <div className='rating-block'>
+            <div className='rating-label'>IMDb RATING</div>
+            <div className='rating-value'>
+              <span className='star-icon'>⭐</span>
+              <span className='score-big'>
+                {typeof imdbRating === 'number'
+                  ? imdbRating.toFixed(1)
+                  : imdbRating}
               </span>
-            )}
-            <span className='meta-genres'>
-              {movie.genres?.map((g) => g.name).join(', ')}
-            </span>
-          </div>
-
-          {movie.tagline && (
-            <p className='details-tagline'>&quot;{movie.tagline}&quot;</p>
-          )}
-
-          <div className='details-actions'>
-            {trailer && (
-              <button
-                className='btn-trailer'
-                onClick={() => setShowTrailer(true)}
-              >
-                ▶ Play Trailer
-              </button>
-            )}
-            <button
-              className={`btn-watchlist ${inWatchlist ? 'in-watchlist' : ''}`}
-              onClick={handleAddToWatchlist}
-            >
-              {inWatchlist ? '✓ In Watchlist' : '+ Watchlist'}
-            </button>
-          </div>
-
-          <div className='details-overview'>
-            <h3>Overview</h3>
-            <p>{movie.overview}</p>
-          </div>
-
-          {director && (
-            <div className='details-director'>
-              <strong>Director:</strong> {director.name}
+              <span className='score-max'>/10</span>
             </div>
-          )}
-
-          {/* User Rating Section */}
-          <div className='user-rating-section'>
-            <h3>What did you think of {movie.title}?</h3>
-            <div className='rating-stars'>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
-                <button
-                  key={star}
-                  className={`star ${userRating >= star ? 'active' : ''}`}
-                  onClick={() => handleRatingSelect(star)}
-                  disabled={!user}
-                  type='button'
-                >
-                  ★
-                </button>
-              ))}
+            <div className='rating-count'>
+              {imdbVotes ? Number(imdbVotes).toLocaleString() : ''}
             </div>
-
-            <div className='rating-actions'>
-              {!user ? (
-                <span className='login-prompt'>
-                  <Link to='/login'>Login</Link> to rate
-                </span>
-              ) : userRating > 0 && userRating !== savedRating ? (
-                <button
-                  className='btn-submit-rating'
-                  onClick={handleSubmitRating}
-                >
-                  Submit {userRating}/10
-                </button>
-              ) : savedRating > 0 && userRating === savedRating ? (
-                <span className='rating-status'>
-                  ✓ Your rating: {savedRating}/10
-                </span>
+          </div>
+          <div
+            className='rating-block user-rate'
+            onClick={() => {
+              if (!user) {
+                navigate('/login');
+              } else {
+                setShowRatingModal(true);
+              }
+            }}
+          >
+            <div className='rating-label'>YOUR RATING</div>
+            <div className='rating-value action'>
+              {userRating > 0 ? (
+                <>
+                  <span className='star-icon blue'>★</span>
+                  <span className='score-big'>{userRating}</span>
+                </>
               ) : (
-                <span
-                  className='rating-status'
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  Tap a star to rate
-                </span>
+                <>
+                  <span className='star-icon hollow'>☆</span>
+                  <span className='score-action'>Rate</span>
+                </>
               )}
             </div>
           </div>
-
-          {/* Rating Breakdown */}
-          {ratingStats && ratingStats.totalRatings > 0 && (
-            <div className='rating-breakdown'>
-              <h4>User Ratings ({ratingStats.totalRatings} ratings)</h4>
-              <div className='rating-bar'>
-                <div className='rating-average'>
-                  <span className='avg-number'>
-                    {ratingStats.average?.toFixed(1)}
-                  </span>
-                  <span className='avg-label'>/10</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Cast Section */}
-      {cast.length > 0 && (
-        <section className='cast-section'>
-          <h2>Top Billed Cast</h2>
-          <div className='cast-grid'>
-            {cast.map((person) => (
-              <Link
-                to={`/person/${person.id}`}
-                key={person.id}
-                className='cast-card'
-              >
-                <img
-                  src={
-                    person.profile_path
-                      ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
-                      : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23333" width="100" height="100"/%3E%3Ctext x="50" y="55" text-anchor="middle" fill="%23666" font-size="40"%3E👤%3C/text%3E%3C/svg%3E'
-                  }
-                  alt={person.name}
-                />
-                <div className='cast-info'>
-                  <strong>{person.name}</strong>
-                  <span>{person.character}</span>
-                </div>
-              </Link>
-            ))}
+      {/* 2. HERO SECTION (Media: Poster + Trailer) */}
+      <section className='imdb-hero-section'>
+        <div className='hero-poster-wrapper'>
+          <img
+            src={
+              movie.poster_path?.startsWith('http')
+                ? movie.poster_path
+                : `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+            }
+            alt={movie.title}
+            className='hero-poster-img'
+          />
+          <button
+            className={`hero-watchlist-ribbon ${inWatchlist ? 'active' : ''}`}
+            onClick={toggleWatchlist}
+            title='Add to Watchlist'
+          >
+            {inWatchlist ? '✓' : '+'}
+          </button>
+        </div>
+
+        <div
+          className='hero-media-wrapper'
+          style={{
+            backgroundImage: `url(${
+              movie.backdrop_path?.startsWith('http')
+                ? movie.backdrop_path
+                : `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
+            })`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className='hero-media-overlay'>
+            <div className='media-content-center'>
+              {trailer && (
+                <button
+                  className='play-trailer-btn-large'
+                  onClick={() => setPlayTrailer(true)}
+                >
+                  <span className='play-icon'>▶</span>
+                  <div className='play-text'>
+                    <span className='play-label'>Play Trailer</span>
+                    <span className='play-time'>2:30</span>
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
-        </section>
-      )}
-
-      {/* Reviews Section */}
-      <section className='reviews-section'>
-        <h2>Reviews</h2>
-
-        {/* Review Form */}
-        {user ? (
-          hasReviewed ? (
-            <p className='already-reviewed'>
-              ✓ You have already reviewed this movie
-            </p>
-          ) : (
-            <form className='review-form' onSubmit={handleSubmitReview}>
-              <textarea
-                placeholder='Write your review (at least 10 characters)...'
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                rows={4}
-                minLength={10}
-              />
-              <button
-                type='submit'
-                disabled={reviewLoading || reviewText.trim().length < 10}
-              >
-                {reviewLoading ? 'Submitting...' : 'Submit Review'}
-              </button>
-            </form>
-          )
-        ) : (
-          <p className='login-to-review'>
-            <Link to='/login'>Login</Link> to write a review
-          </p>
-        )}
-
-        {/* Reviews List */}
-        <div className='reviews-list'>
-          {reviews.length > 0 ? (
-            reviews.map((review) => (
-              <div key={review._id} className='review-card'>
-                <div className='review-header'>
-                  <span className='review-author'>
-                    {review.userId?.name || 'Anonymous'}
-                  </span>
-                  <span className='review-date'>
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className='review-content'>{review.content}</p>
-              </div>
-            ))
-          ) : (
-            <p className='no-reviews'>
-              No reviews yet. Be the first to review!
-            </p>
-          )}
         </div>
       </section>
 
-      {/* Similar Movies */}
-      {similar.length > 0 && (
-        <section className='similar-section'>
-          <h2>Similar Movies</h2>
-          <div className='movies-grid'>
-            {similar.slice(0, 6).map((m, i) => (
-              <MovieCard key={m.id} movie={m} index={i} mediaType='movie' />
-            ))}
-          </div>
-        </section>
+      {/* Video Modal */}
+      {playTrailer && trailer && (
+        <VideoModal
+          videoKey={trailer.key}
+          title={`${movie.title} - Trailer`}
+          onClose={() => setPlayTrailer(false)}
+        />
       )}
+
+      {/* 3. MAIN CONTENT GRID (2/3 Left, 1/3 Right) */}
+      <div className='imdb-content-grid'>
+        {/* LEFT COLUMN */}
+        <div className='main-column'>
+          {/* Plot & Credits */}
+          <section className='plot-section'>
+            <div className='genres-badges'>
+              {movie.genres?.map((g) => (
+                <span key={g.id} className='genre-chip'>
+                  {g.name}
+                </span>
+              ))}
+            </div>
+            <p className='plot-text'>{movie.overview}</p>
+
+            <div className='credits-list-simple'>
+              {director && (
+                <div className='credit-row'>
+                  <span className='credit-label'>Director</span>
+                  <Link to={`/person/${director.id}`} className='credit-link'>
+                    {director.name}
+                  </Link>
+                </div>
+              )}
+              {writers && writers.length > 0 && (
+                <div className='credit-row'>
+                  <span className='credit-label'>Writers</span>
+                  {writers.map((w, i) => (
+                    <span key={w.id}>
+                      <Link to={`/person/${w.id}`} className='credit-link'>
+                        {w.name}
+                      </Link>
+                      {i < writers.length - 1 && ' • '}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <span className='divider'></span>
+
+          {/* Cast */}
+          <CastList cast={cast} />
+
+          {/* Reviews */}
+          <ReviewSection
+            tmdbId={id}
+            mediaType='movie'
+            reviews={reviews}
+            user={user}
+            onReviewSubmitted={handleReviewSubmitted}
+            movieTitle={movie.title}
+            posterPath={movie.poster_path}
+          />
+        </div>
+
+        {/* RIGHT COLUMN (Sidebar) */}
+        <div className='sidebar-column'>
+          {/* More Like This */}
+          {similar && similar.length > 0 && (
+            <div className='sidebar-widget'>
+              <div className='section-header-simple text-sm'>
+                <h3>More Like This</h3>
+              </div>
+              <div className='sidebar-movies-list'>
+                {similar.slice(0, 6).map((m, index) => (
+                  <div
+                    key={`sidebar-movie-${m.id}-${index}`}
+                    className='sidebar-movie-item'
+                  >
+                    <div className='sidebar-poster'>
+                      <img
+                        src={
+                          m.poster_path?.startsWith('http')
+                            ? m.poster_path
+                            : `https://image.tmdb.org/t/p/w92${m.poster_path}`
+                        }
+                        alt={m.title}
+                      />
+                    </div>
+                    <div className='sidebar-info'>
+                      <div className='mini-rating'>
+                        ⭐ {m.vote_average?.toFixed(1)}
+                      </div>
+                      <Link to={`/movie/${m.id}`} className='sidebar-title'>
+                        {m.title}
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tech Specs / Details */}
+          <div className='sidebar-widget'>
+            <div className='section-header-simple text-sm'>
+              <h3>Details</h3>
+            </div>
+            <div className='details-list'>
+              <div className='detail-item'>
+                <span className='label'>Release Date</span>
+                <span className='value'>
+                  {new Date(movie.release_date).toLocaleDateString()}
+                </span>
+              </div>
+              {movie.production_countries?.length > 0 && (
+                <div className='detail-item'>
+                  <span className='label'>Country of Origin</span>
+                  <span className='value'>
+                    {movie.production_countries.map((c) => c.name).join(', ')}
+                  </span>
+                </div>
+              )}
+              {movie.spoken_languages?.length > 0 && (
+                <div className='detail-item'>
+                  <span className='label'>Language</span>
+                  <span className='value'>
+                    {movie.spoken_languages.map((l) => l.name).join(', ')}
+                  </span>
+                </div>
+              )}
+              {movie.budget > 0 && (
+                <div className='detail-item'>
+                  <span className='label'>Budget</span>
+                  <span className='value'>
+                    ${Number(movie.budget).toLocaleString()}
+                  </span>
+                </div>
+              )}
+              {movie.revenue > 0 && (
+                <div className='detail-item'>
+                  <span className='label'>Revenue</span>
+                  <span className='value'>
+                    ${Number(movie.revenue).toLocaleString()}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Rating Modal */}
+      <RatingModal
+        isOpen={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        tmdbId={id}
+        mediaType='movie'
+        currentRating={userRating}
+        title={movie.title}
+        onRatingSuccess={(score) => setUserRating(score)}
+      />
     </div>
   );
 };

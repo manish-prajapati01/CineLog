@@ -28,13 +28,27 @@ const movieSchema = new mongoose.Schema(
       ref: "artists",
       required: true,
     },
+    writer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "artists",
+      required: false, // Optional for now
+    },
     genre: {
-      type: String,
+      type: [String], // Changed to Array
       required: true,
     },
     language: {
       type: String,
       required: true,
+    },
+    country: {
+      type: String,
+      required: false, 
+      default: "India",
+    },
+    runtime: {
+      type: Number, // In minutes
+      required: false,
     },
     posters: {
       type: [],
@@ -49,11 +63,18 @@ const movieSchema = new mongoose.Schema(
       ref: "users",
       required: true,
     },
-    cast: {
-      type: [mongoose.Schema.Types.ObjectId],
-      ref: "artists",
-      required: false,
-    },
+    cast: [
+      {
+        artist: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "artists",
+        },
+        role: {
+          type: String, // Character Name
+          required: false,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

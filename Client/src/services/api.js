@@ -6,8 +6,11 @@
 import axios from 'axios';
 
 // Create axios instance with base config
+// Uses environment variable for production, falls back to /api for local dev
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL
+    ? `${import.meta.env.VITE_API_URL}/api`
+    : '/api',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

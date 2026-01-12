@@ -5,79 +5,74 @@
 
 /* ============ CSS Variables (Design Tokens) ============ */
 :root {
-  /* Primary Colors - TMDB Inspired */
-  --color-primary-dark: #0d253f;
-  --color-primary-teal: #01b4e4;
-  --color-primary-green: #90cea1;
+  /* IMDb Brand Colors */
+  --color-imdb-yellow: #f5c518;
+  --color-imdb-black: #121212;
+  --color-imdb-grey: #1f1f1f;
 
-  /* Background Colors - Dark Theme */
-  --color-bg-primary: #0a0a0f;
-  --color-bg-secondary: #121218;
-  --color-bg-tertiary: #1a1a24;
-  --color-bg-card: #16161e;
-  --color-bg-elevated: #1e1e28;
+  /* Primary Actions */
+  --color-primary: var(--color-imdb-yellow);
+  --color-primary-hover: #e2b616;
+
+  /* Background Colors */
+  --color-bg-primary: #121212; /* Main background */
+  --color-bg-secondary: #1f1f1f; /* Cards/Sections */
+  --color-bg-tertiary: #2c2c2c; /* Inputs/Hover states */
+  --color-bg-card: #1a1a1a;
+  --color-bg-elevated: #252525;
+  --color-bg-overlay: rgba(0, 0, 0, 0.85);
 
   /* Surface Colors */
-  --color-surface: #1c1c26;
-  --color-surface-hover: #252532;
-  --color-surface-active: #2a2a3a;
+  --color-surface: #1f1f1f;
+  --color-surface-hover: #2c2c2c;
+  --color-surface-active: #383838;
 
   /* Text Colors */
   --color-text-primary: #ffffff;
-  --color-text-secondary: #a0a0b0;
-  --color-text-muted: #6b6b7a;
-  --color-text-accent: #01b4e4;
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-text-muted: rgba(255, 255, 255, 0.5);
+  --color-text-accent: var(--color-imdb-yellow);
+  --color-link: #5799ef; /* IMDb Link Blue */
 
   /* Rating Colors */
-  --color-rating-excellent: #21d07a;
-  --color-rating-good: #d2d531;
-  --color-rating-average: #d2d531;
-  --color-rating-poor: #db2360;
+  --color-rating-star: #f5c518;
+  --color-rating-good: #66cc33;
+  --color-rating-average: #ffcc33;
+  --color-rating-poor: #ff0000;
 
-  /* Accent Colors */
-  --color-accent-blue: #01b4e4;
-  --color-accent-purple: #9c27b0;
-  --color-accent-pink: #e91e63;
-  --color-accent-orange: #ff9800;
-
-  /* Gradient Backgrounds */
+  /* Gradients - Subtle for depth, not key feature */
   --gradient-hero: linear-gradient(
-    to right,
-    rgba(10, 10, 15, 1) 0%,
-    rgba(10, 10, 15, 0.8) 50%,
-    rgba(10, 10, 15, 0.4) 100%
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(18, 18, 18, 1) 100%
   );
   --gradient-card: linear-gradient(
     180deg,
     transparent 0%,
     rgba(0, 0, 0, 0.8) 100%
   );
-  --gradient-teal: linear-gradient(to right, #01b4e4, #90cea1);
+  --gradient-yellow: linear-gradient(45deg, #f5c518, #d4a910);
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 20px rgba(1, 180, 228, 0.3);
+  --shadow-glow: 0 0 15px rgba(245, 197, 24, 0.2); /* Yellow glow */
 
-  /* Border Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  /* Border Radius - Sharper for IMDb look */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
   --radius-full: 9999px;
 
   /* Transitions */
   --transition-fast: 150ms ease;
-  --transition-normal: 300ms ease;
-  --transition-slow: 500ms ease;
-  --transition-bounce: 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --transition-normal: 250ms ease;
 
   /* Typography */
   --font-family:
-    'Inter', 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
+    'Roboto', 'Helvetica', 'Arial', sans-serif; /* IMDb uses closer to Arial/Roboto */
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -86,38 +81,27 @@
   --font-size-2xl: 1.5rem;
   --font-size-3xl: 2rem;
   --font-size-4xl: 2.5rem;
-  --font-size-5xl: 3rem;
 
-  /* Spacing */
-  --space-0: 0;
+  /* Spacing - Compact/Dense */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
-  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-20: 5rem;
 
   /* Z-Index */
-  --z-dropdown: 100;
-  --z-sticky: 200;
-  --z-modal: 300;
-  --z-toast: 400;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-modal: 1050;
+  --z-tooltip: 1080;
 
-  /* ============ Backward Compatible Aliases ============ */
-  /* These are used by page-specific CSS */
+  /* Aliases */
   --bg-primary: var(--color-bg-primary);
   --bg-secondary: var(--color-bg-secondary);
-  --bg-tertiary: var(--color-bg-tertiary);
   --text-primary: var(--color-text-primary);
-  --text-secondary: var(--color-text-secondary);
-  --accent-primary: #01b4e4;
-  --accent-hover: #00a0c8;
-  --border-color: #2a2a3a;
+  --accent-primary: var(--color-imdb-yellow);
+  --border-color: #333333;
 }
 
 /* ============ Global Reset & Base Styles ============ */

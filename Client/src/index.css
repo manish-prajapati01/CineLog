@@ -1,6 +1,50 @@
 /* Global Styles */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+:root {
+  /* Core Colors */
+  --bg-primary: #121212;
+  --bg-secondary: #1f1f1f;
+  --bg-tertiary: #2a2a2a;
+  --bg-elevated: #2c2c2c;
+
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --text-muted: #757575;
+
+  /* Accents */
+  --accent-primary: #f5c518; /* IMDb Yellow */
+  --accent-blue: #5799ef;
+  --accent-red: #d32f2f;
+
+  /* Borders & Dividers */
+  --border-color: #333333;
+
+  /* Compatibility Aliases (for new files) */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-imdb-yellow: var(--accent-primary);
+  --color-accent-blue: var(--accent-blue);
+  --color-bg-card: var(--bg-secondary);
+
+  /* Effects */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Transitions */
+  --transition-normal: 0.2s ease-in-out;
+}
+
 /* App Layout */
 .app-layout {
   min-height: 100vh;

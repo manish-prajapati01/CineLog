@@ -7,6 +7,51 @@
   padding-top: 70px;
 }
 
+/* Season selection chips */
+.season-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+  padding-bottom: 5px;
+}
+
+.season-chip {
+  padding: 8px 20px;
+  background: transparent !important;
+  border: 1px solid #888 !important; /* Lighter border for visibility */
+  border-radius: 20px !important;
+  color: #fff !important;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer !important;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px; /* Ensure circular look for single digits if needed */
+}
+
+.season-chip:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.season-chip.active {
+  background: var(--accent-primary) !important; /* IMDb Yellow */
+  color: #000 !important;
+  border-color: var(--accent-primary) !important;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(245, 197, 24, 0.4);
+}
+
+.season-chip.active:hover {
+  background: #ffdb4d !important;
+  transform: none; /* No movement on active to feel grounded */
+}
+
 .meta-seasons,
 .meta-episodes {
   color: var(--text-secondary);

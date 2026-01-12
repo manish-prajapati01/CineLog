@@ -20,10 +20,11 @@ router.post("/add-movie", authMiddlewares, async (req, res) => {
 router.get("/", authMiddlewares, async (req, res) => {
   try {
     const movies = await Movie.find()
-      .populate("cast")
+      .populate("cast.artist") // Populate nested artist in cast array
       .populate("hero")
       .populate("heroine")
       .populate("director")
+      .populate("writer")
       .populate("createdBy");
     res.status(200).json({ movies, success: true });
   } catch (error) {
@@ -36,10 +37,11 @@ router.get("/", authMiddlewares, async (req, res) => {
 router.get("/:id", authMiddlewares, async (req, res) => {
   try {
     const movie = await Movie.findById(req.params.id)
-      .populate("cast")
+      .populate("cast.artist")
       .populate("hero")
       .populate("heroine")
       .populate("director")
+      .populate("writer")
       .populate("createdBy");
     res.status(200).json({ data: movie, success: true });
   } catch (error) {

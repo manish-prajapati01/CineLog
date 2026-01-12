@@ -1,37 +1,21 @@
-import apiRequest from ".";
+import api from '../services/api';
 
 export const AddMovie = async (payload) => {
-  return await apiRequest({
-    method: "POST",
-    endPoint: "/api/movies/add-movie",
-    payload,
-  });
+  return await api.post('/admin/movies/add-movie', payload);
 };
 
 export const GetAllMovies = async () => {
-  return await apiRequest({
-    method: "GET",
-    endPoint: "/api/movies/",
-  });
+  return await api.get('/admin/movies/');
 };
 
 export const GetMovieById = async (id) => {
-  return await apiRequest({
-    method: "GET",
-    endPoint: `/api/movies/${id}`,
-  });
+  return await api.get(`/admin/movies/${id}`);
 };
+
 export const UpdateMovie = async (id, data) => {
-  return await apiRequest({
-    method: "PUT",
-    endPoint: `/api/movies/${id}`,
-    payload: data,
-  });
+  return await api.put(`/admin/movies/${id}`, data);
 };
 
 export const DeleteMovie = async (id) => {
-  return await apiRequest({
-    method: "DELETE",
-    endPoint: `/api/movies/${id}`,
-  });
+  return await api.delete(`/admin/movies/${id}`);
 };

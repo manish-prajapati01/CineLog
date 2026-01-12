@@ -1,13 +1,19 @@
-import { Button, Table, message } from "antd";
-import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { setLoading } from "../../../redux/loadersSlice";
-import { DeleteMovie, GetAllMovies } from "../../../apis/movies";
-import { getDateFormat } from "../../../helpers";
+import { Button, Table, message, Input, Space, Tooltip, Tag } from 'antd';
+import { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { setLoading } from '../../../redux/loadersSlice';
+import { DeleteMovie, GetAllMovies } from '../../../apis/movies';
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, StarFilled } from '@ant-design/icons';
+import moment from 'moment';
 
+/**
+ * Admin Movies Page
+ * Manage movies (add, edit, delete) with smart table.
+ */
 function Movies() {
   const [movies, setMovies] = useState([]);
+  const [searchText, setSearchText] = useState('');
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -15,8 +21,8 @@ function Movies() {
     try {
       dispatch(setLoading(true));
       const response = await GetAllMovies();
-      dispatch(setLoading(false));
       setMovies(response.movies);
+      dispatch(setLoading(false));
     } catch (error) {
       dispatch(setLoading(false));
       message.error(error.message);
@@ -28,86 +34,134 @@ function Movies() {
       dispatch(setLoading(true));
       const response = await DeleteMovie(id);
       message.success(response.message);
-      await getAllMovies();
+      getAllMovies();
       dispatch(setLoading(false));
     } catch (error) {
       dispatch(setLoading(false));
       message.error(error.message);
     }
   };
+
   useEffect(() => {
     getAllMovies();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const filteredMovies = movies.filter(movie => 
+      movie.name.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   const columns = [
     {
-      title: "Movie",
-      dataIndex: "name",
-      render: (text, record) => {
-        const imageUrl = record?.posters?.[0] || "";
-        return <img className="w-20 h-20 rounded" src={imageUrl} alt="" />;
+      title: 'Poster',
+      dataIndex: 'posters',
+      render: (posters, record) => {
+        const imageUrl = posters?.[0] || '';
+        return (
+            <div style={{ width: 40, height: 60, borderRadius: 4, overflow: 'hidden', border: '1px solid #333' }}>
+                {imageUrl ? (
+                     <img src={imageUrl} alt={record.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                    <div style={{ width: '100%', height: '100%', background: '#333' }} />
+                )}
+            </div>
+        );
       },
+      width: 80,
     },
-    { title: "Name", dataIndex: "name" },
-    {
-      title: "Relaese Date",
-      dataIndex: "releaseDate",
-      render: (text) => {
-        return getDateFormat(text);
-      },
+    { 
+        title: 'Title', 
+        dataIndex: 'name', 
+        sorter: (a, b) => a.name.localeCompare(b.name),
+        render: (text) => <span style={{ fontWeight: 600, fontSize: '1.05rem', color: '#fff' }}>{text}</span>
     },
-    { title: "Genre", dataIndex: "genre" },
-    { title: "Language", dataIndex: "language" },
     {
-      title: "Action",
-      dataIndex: "action",
+      title: 'Release Date',
+      dataIndex: 'releaseDate',
+      render: (text) => <span style={{ color: '#aaa' }}>{moment(text).format('DD MMM YYYY')}</span>,
+      sorter: (a, b) => new Date(a.releaseDate) - new Date(b.releaseDate),
+    },
+    { 
+        title: 'Genre', 
+        dataIndex: 'genre',
+        render: (genre) => {
+           if(Array.isArray(genre)){
+               return genre.map(g => <Tag key={g} color="gold" style={{ color: '#000', fontWeight: 500, marginRight: 5 }}>{g}</Tag>)
+           }
+           return <Tag color="gold" style={{ color: '#000', fontWeight: 500 }}>{genre}</Tag>
+        }
+    },
+    {
+        title: 'Rating',
+        dataIndex: 'rating', // Assuming rating assumes we fetch it or it's on the movie object. If not, mocked.
+        render: (text) => (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <StarFilled style={{ color: '#f5c518' }} />
+                <span style={{ fontWeight: 'bold' }}>{text || 'N/A'}</span>
+            </div>
+        )
+    },
+    { 
+      title: 'Language', 
+      dataIndex: 'language',
+      responsive: ['md']
+    },
+    {
+      title: 'Action',
+      dataIndex: 'action',
       render: (text, record) => {
         return (
-          <div className="flex gap-5">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-6 h-6"
-              onClick={() => {
-                navigate(`/admin/movies/edit/${record._id}`);
-              }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
-              />
-            </svg>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-6 h-6"
-              onClick={() => {
-                deleteMovie(record._id);
-              }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-              />
-            </svg>
-          </div>
+            <Space size="middle">
+                <Tooltip title="Edit">
+                    <Button 
+                        type="text" 
+                        icon={<EditOutlined style={{ color: '#5799ef' }} />} 
+                        onClick={() => navigate(`/admin/movies/edit/${record._id}`)}
+                    />
+                </Tooltip>
+                <Tooltip title="Delete">
+                    <Button 
+                        type="text" 
+                        danger
+                        icon={<DeleteOutlined />} 
+                        onClick={() => {
+                            if(window.confirm('Are you sure you want to delete this movie?')) {
+                                deleteMovie(record._id);
+                            }
+                        }}
+                    />
+                </Tooltip>
+            </Space>
         );
       },
     },
   ];
+
   return (
     <div>
-      <div className="flex justify-end mr-5">
-        <Button onClick={() => navigate("/admin/movies/add")}>Add Movie</Button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Movies</h1>
+          <Space>
+             <Input 
+                placeholder="Search movies..." 
+                prefix={<SearchOutlined style={{ color: '#888' }} />} 
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ width: 250, background: '#1f1f1f', border: 'none', color: '#fff' }}
+             />
+             <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/admin/movies/add')}>
+                Add Movie
+             </Button>
+          </Space>
       </div>
-      <Table dataSource={movies} columns={columns} className="m-5"></Table>
+
+      <Table
+        dataSource={filteredMovies}
+        columns={columns}
+        rowKey='_id'
+        pagination={{ pageSize: 8, position: ['bottomCenter'] }}
+        style={{ background: 'transparent' }}
+      />
     </div>
   );
 }
