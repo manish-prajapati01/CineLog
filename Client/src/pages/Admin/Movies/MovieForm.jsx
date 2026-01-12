@@ -1,43 +1,27 @@
-import { Button, Form, Select, Tabs, Upload, message } from 'antd';
-import Item from 'antd/es/list/Item';
+import { Button, Form, Input, Select, Tabs, Upload, message, InputNumber, Row, Col } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { antValidatioError } from '../../../helpers';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { setLoading } from '../../../redux/loadersSlice';
 import { GetAllArtists } from '../../../apis/artists';
 import { AddMovie, GetMovieById, UpdateMovie } from '../../../apis/movies';
-import moment from 'moment';
 import { UploadImage } from '../../../apis/images';
+import { CloseOutlined, PlusOutlined } from '@ant-design/icons';
+import moment from 'moment';
+
+const { TextArea } = Input;
 
 function MovieForm() {
-  const [artists, setArtists] = useState();
-  // const [movie,setMovies]=useState({});
+  const [artists, setArtists] = useState([]);
+  const [movie, setMovie] = useState(null);
   const [file, setFile] = useState(null);
-  const [movie, setMovies] = useState();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const params = useParams();
-  const onFinish = async (values) => {
-    try {
-      dispatch(setLoading(true));
-      let response;
-      console.log('values', values);
-      if (params?.id) {
-        response = await UpdateMovie(params.id, values);
-      } else {
-        response = await AddMovie(values);
-      }
-      // naviagte("/admin/movies")
-      dispatch(setLoading(false));
-      message.success(response.message);
-      navigate('/admin');
-    } catch (error) {
-      dispatch(setLoading(false));
-      message.error(error.message);
-    }
-  };
+  const [form] = Form.useForm();
+  const [activeTab, setActiveTab] = useState('1');
 
+  // Load Artists for Select dropdowns
   const fetchAllArtists = async () => {
     try {
       dispatch(setLoading(true));
@@ -46,6 +30,7 @@ function MovieForm() {
         response.data.map((artist) => ({
           value: artist._id,
           label: artist.name,
+          images: artist.images,
         })),
       );
       dispatch(setLoading(false));
@@ -54,286 +39,323 @@ function MovieForm() {
       dispatch(setLoading(false));
     }
   };
-  const getMovieById = async (id) => {
+
+  // Load existing movie data
+  const getMovieById = useCallback(
+    async (id) => {
+      try {
+        dispatch(setLoading(true));
+        const response = await GetMovieById(id);
+        const data = response.data;
+
+        // Calculate hours and minutes from runtime (total minutes)
+        const runtimeHours = data.runtime ? Math.floor(data.runtime / 60) : 0;
+        const runtimeMinutes = data.runtime ? data.runtime % 60 : 0;
+
+        // Transform data for Ant Design Form
+        const formattedData = {
+          ...data,
+          releaseDate: data.releaseDate
+            ? moment(data.releaseDate).format('YYYY-MM-DD')
+            : '',
+          hero: data.hero?._id,
+          heroine: data.heroine?._id,
+          director: data.director?._id,
+          writer: data.writer?._id,
+          // Cast is array of objects { artist: {_id...}, role: "..." }
+          // Form list expects array of objects. We need to map `artist` object to `artist` ID for the Select
+          cast: data.cast?.map((c) => ({
+             artist: c.artist?._id,
+             role: c.role
+          })) || [],
+          runtimeHours,
+          runtimeMinutes,
+        };
+
+        setMovie(data);
+        form.setFieldsValue(formattedData);
+        dispatch(setLoading(false));
+      } catch (error) {
+        dispatch(setLoading(false));
+        message.error(error.message);
+      }
+    },
+    [dispatch, form],
+  );
+
+  useEffect(() => {
+    fetchAllArtists();
+    if (params.id) {
+      getMovieById(params.id);
+    }
+  }, [params.id, getMovieById]);
+
+  // Form Submit Handler
+  const onFinish = async (values) => {
     try {
       dispatch(setLoading(true));
-      const response = await GetMovieById(id);
-      console.log('res', response);
-      // response.data.releaseDate = moment(response.data.releaseDate).format(
-      //   'DD-MM-YYYY',
-      // );
-      response.data.cast = response.data?.cast?.map((artist) => artist._id);
-      response.data.hero = response.data?.hero._id;
-      response.data.heroine = response.data?.heroine._id;
-      response.data.director = response.data?.director._id;
-      setMovies(response.data);
+      
+      // Calculate total runtime in minutes
+      const totalRuntime = (values.runtimeHours || 0) * 60 + (values.runtimeMinutes || 0);
+      
+      const payload = {
+          ...values,
+          runtime: totalRuntime,
+          // cast is already in correct format { artist: ID, role: String } from Form.List
+      };
+
+      // Remove temp fields
+      delete payload.runtimeHours;
+      delete payload.runtimeMinutes;
+
+      let response;
+      if (params.id) {
+        response = await UpdateMovie(params.id, payload);
+      } else {
+        response = await AddMovie(payload);
+      }
       dispatch(setLoading(false));
+      message.success(response.message);
+      navigate('/admin/movies');
     } catch (error) {
       dispatch(setLoading(false));
       message.error(error.message);
     }
   };
-  const imageUpload = async () => {
+
+  const handleImageUpload = async () => {
+    if (!file) return message.error('Please select a file first');
     try {
       const formData = new FormData();
       formData.append('image', file);
       dispatch(setLoading(true));
-      const response = await UploadImage(formData);
-      if (response.success) {
-       const response2= await UpdateMovie(movie._id, {
-          ...movie,
-          posters: [...(movie?.posters || []), response.data],
-        });
-        setMovies(response2.data);
+
+      const uploadRes = await UploadImage(formData);
+      if (uploadRes.success) {
+        const updatedPosters = [...(movie?.posters || []), uploadRes.data];
+        const newMovieState = { ...movie, posters: updatedPosters };
+        setMovie(newMovieState);
         setFile(null);
+
+        if (movie?._id) {
+          await UpdateMovie(movie._id, { posters: updatedPosters });
+          message.success('Poster added');
+        }
       }
-      // reloadData();
       dispatch(setLoading(false));
-      message.success(response.message);
-      // navigate('/admin');
-      // setShowArtistModal(false);
     } catch (error) {
-      message.error(error.message);
+      message.error(error.message || 'Upload failed');
       dispatch(setLoading(false));
     }
   };
-  const deleteImage = async (image) => {
+
+  const deletePoster = async (imageUrl) => {
     try {
       dispatch(setLoading(true));
-      const response = await UpdateMovie(movie._id, {
-        ...movie,
-        posters: movie?.posters?.filter((item) => item !== image),
-      });
+      const updatedPosters = movie?.posters?.filter((img) => img !== imageUrl);
+      const newMovieState = { ...movie, posters: updatedPosters };
+      setMovie(newMovieState);
 
+      if (movie?._id) {
+        await UpdateMovie(movie._id, { posters: updatedPosters });
+        message.success('Poster removed');
+      }
       dispatch(setLoading(false));
-      message.success(response.message);
-      // navigate("/admin")
-      setMovies(response.data);
     } catch (error) {
       message.error(error.message);
       dispatch(setLoading(false));
     }
   };
-  const fetchData = useCallback(async () => {
-    if (params.id) {
-      getMovieById(params.id);
-    }
-  }, []);
-  useEffect(() => {
-    fetchAllArtists();
-  }, []);
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-  console.log('movie', movie);
+
   return (
-    (movie || !params.id) && (
-      <div>
-        <div className='flex justify-between items-center '>
-          <h1 className='text-gray-600 text-xl font-semibold'>
-            {movie ? 'Update Movie' : 'Add Movie'}
-          </h1>
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            fill='none'
-            viewBox='0 0 24 24'
-            onClick={() => navigate('/admin')}
-            strokeWidth={1.5}
-            stroke='currentColor'
-            className='w-6 h-6 justify-end'
-          >
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              d='M6 18L18 6M6 6l12 12'
-            />
-          </svg>
-        </div>
-
-        <Tabs>
-          <Item tab='Details' key='1'>
-            <Form
-              layout='vertical'
-              className='flex flex-col gap-5'
-              onFinish={onFinish}
-              initialValues={movie}
-            >
-              <div className='grid grid-cols-3 gap-5'>
-                <Form.Item
-                  label='Name'
-                  name='name'
-                  rules={antValidatioError}
-                  className='col-span-2'
-                >
-                  <input />
-                </Form.Item>
-                <Form.Item
-                  label='Release Date'
-                  name='releaseDate'
-                  rules={antValidatioError}
-                >
-                  <input />
-                </Form.Item>
-              </div>
-              <Form.Item label='Plot' name='plot' rules={antValidatioError}>
-                <textarea />
-              </Form.Item>
-              <div className='grid grid-cols-3 gap-5'>
-                <Form.Item
-                  label='Hero'
-                  name='hero'
-                  rules={antValidatioError}
-                  className='col-span-1'
-                >
-                  <Select showSearch options={artists}></Select>
-                </Form.Item>
-                <Form.Item
-                  label='Heroine'
-                  name='heroine'
-                  rules={antValidatioError}
-                >
-                  <Select showSearch options={artists}></Select>
-                </Form.Item>
-                <Form.Item
-                  label='Director'
-                  name='director'
-                  rules={antValidatioError}
-                >
-                  <Select showSearch options={artists}></Select>
-                </Form.Item>
-              </div>
-              <div className='grid grid-cols-3 gap-5'>
-                <Form.Item
-                  label='Genre'
-                  name='genre'
-                  rules={antValidatioError}
-                  className='col-span-1'
-                >
-                  <Select
-                    showSearch
-                    options={[
-                      {
-                        value: 'action',
-                        label: 'Action',
-                      },
-                      {
-                        value: 'comedy',
-                        label: 'Comedy',
-                      },
-                      {
-                        value: 'drama',
-                        label: 'Drama',
-                      },
-                      {
-                        value: 'horror',
-                        label: 'Horror',
-                      },
-                      {
-                        value: 'romance',
-                        label: 'Romance',
-                      },
-                    ]}
-                  ></Select>
-                </Form.Item>
-                <Form.Item
-                  label='Language'
-                  name='language'
-                  rules={antValidatioError}
-                >
-                  <Select
-                    showSearch
-                    options={[
-                      {
-                        value: 'english',
-                        label: 'English',
-                      },
-                      {
-                        value: 'telegu',
-                        label: 'Telegu',
-                      },
-                      {
-                        value: 'hindi',
-                        label: 'Hindi',
-                      },
-                    ]}
-                  ></Select>
-                </Form.Item>
-                <Form.Item
-                  label='Trailer'
-                  name='trailer'
-                  rules={antValidatioError}
-                >
-                  <input type='text' />
-                </Form.Item>
-              </div>
-              <Form.Item
-                label='Cast & Crew'
-                name='cast'
-                rules={antValidatioError}
-              >
-                <Select mode='tags' options={artists}></Select>
-              </Form.Item>
-              <div className='flex justify-end gap-5'>
-                <Button onClick={() => navigate('/admin')}>Cancel</Button>
-                <Button htmlType='submit' type='primary'>
-                  Save
-                </Button>
-              </div>
-            </Form>
-          </Item>
-          <Item tab='Poster' key='2' disabled={!movie}>
-            <div className='flex flex-wrap gap-5 mb-10'>
-              {movie?.posters?.map((image) => (
-                <div
-                  key={image}
-                  className='flex gap-5 border border-dashed p-3 '
-                >
-                  <img
-                    src={movie?.posters?.[0]}
-                    alt=''
-                    className='w-20 h-20 object-cover'
-                  ></img>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    strokeWidth={1.5}
-                    stroke='currentColor'
-                    className='w-6 h-6 float-right'
-                    onClick={() => {
-                      deleteImage(image);
-                    }}
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      d='M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0'
-                    />
-                  </svg>
-                </div>
-              ))}
-            </div>
-
-            <Upload
-              // fileList={[file]}
-              onChange={(info) => {
-                setFile(info.file);
-              }}
-              beforeUpload={() => false}
-              listType='picture'
-            >
-              <Button> Click to upload</Button>
-            </Upload>
-            <div className='flex justify-end gap-5 mt-5'>
-              <Button onClick={() => navigate('/admin')}>Cancel</Button>
-              <Button  type='primary' onClick={()=>{imageUpload()}}>
-                Upload
-              </Button>
-            </div>
-          </Item>
-        </Tabs>
+    <div className='p-5'>
+      <div className='flex justify-between items-center mb-5'>
+        <h1 className='text-2xl font-bold text-white'>
+          {params.id ? 'Edit Movie' : 'Add New Movie'}
+        </h1>
+        <Button onClick={() => navigate('/admin/movies')} > Back to List </Button>
       </div>
-    )
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        className='admin-tabs'
+        items={[
+          {
+            key: '1',
+            label: 'Movie Details',
+            children: (
+              <Form layout='vertical' form={form} onFinish={onFinish} className='max-w-4xl'>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <Form.Item label='Movie Name' name='name' rules={[{ required: true }]}>
+                    <Input placeholder='Enter movie title' />
+                  </Form.Item>
+                  <Form.Item label='Release Date' name='releaseDate' rules={[{ required: true }]}>
+                    <Input type='date' />
+                  </Form.Item>
+                </div>
+
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                    <Form.Item label='Runtime (Hours)' name='runtimeHours'>
+                         <InputNumber min={0} max={10} style={{ width: '100%' }} placeholder="Hours" />
+                    </Form.Item>
+                    <Form.Item label='Runtime (Minutes)' name='runtimeMinutes'>
+                         <InputNumber min={0} max={59} style={{ width: '100%' }} placeholder="Minutes" />
+                    </Form.Item>
+                     <Form.Item label='Country' name='country'>
+                        <Select showSearch optionFilterProp='label' options={[
+                            { value: 'India', label: 'India' },
+                            { value: 'USA', label: 'USA' },
+                            { value: 'UK', label: 'UK' },
+                            { value: 'China', label: 'China' },
+                            { value: 'Korea', label: 'Korea' },
+                            { value: 'Japan', label: 'Japan' },
+                            { value: 'France', label: 'France' },
+                        ]} placeholder="Select Country" />
+                    </Form.Item>
+                </div>
+
+                <Form.Item label='Plot Description' name='plot' rules={[{ required: true }]}>
+                  <TextArea rows={3} placeholder='Enter movie plot...' />
+                </Form.Item>
+
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                  <Form.Item label='Genre' name='genre' rules={[{ required: true }]}>
+                    <Select mode="multiple"
+                      options={[
+                        { value: 'Action', label: 'Action' },
+                        { value: 'Comedy', label: 'Comedy' },
+                        { value: 'Drama', label: 'Drama' },
+                        { value: 'Horror', label: 'Horror' },
+                        { value: 'Romance', label: 'Romance' },
+                        { value: 'Sci-Fi', label: 'Sci-Fi' },
+                        { value: 'Thriller', label: 'Thriller' },
+                        { value: 'Adventure', label: 'Adventure' },
+                        { value: 'Fantasy', label: 'Fantasy' },
+                      ]}
+                      placeholder='Select Genres'
+                    />
+                  </Form.Item>
+                  <Form.Item label='Language' name='language' rules={[{ required: true }]}>
+                    <Select
+                      options={[
+                        { value: 'English', label: 'English' },
+                        { value: 'Hindi', label: 'Hindi' },
+                        { value: 'Telugu', label: 'Telugu' },
+                        { value: 'Tamil', label: 'Tamil' },
+                        { value: 'Malayalam', label: 'Malayalam' },
+                        { value: 'Kannada', label: 'Kannada' },
+                      ]}
+                      placeholder='Select Language'
+                    />
+                  </Form.Item>
+                  <Form.Item label='Trailer URL' name='trailer' rules={[{ required: true }]}>
+                    <Input placeholder='YouTube Link' />
+                  </Form.Item>
+                </div>
+
+                <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+                  <Form.Item label='Hero (Lead)' name='hero' rules={[{ required: true }]}>
+                    <Select showSearch optionFilterProp='label' options={artists} placeholder='Lead Actor' />
+                  </Form.Item>
+                  <Form.Item label='Heroine (Lead)' name='heroine' rules={[{ required: true }]}>
+                    <Select showSearch optionFilterProp='label' options={artists} placeholder='Lead Actress' />
+                  </Form.Item>
+                  <Form.Item label='Director' name='director' rules={[{ required: true }]}>
+                    <Select showSearch optionFilterProp='label' options={artists} placeholder='Director' />
+                  </Form.Item>
+                   <Form.Item label='Writer' name='writer'>
+                    <Select showSearch optionFilterProp='label' options={artists} placeholder='Writer' />
+                  </Form.Item>
+                </div>
+
+                {/* Dynamic Cast Section */}
+                 <div className="mb-6 p-4 border border-gray-700 rounded bg-gray-900 bg-opacity-30">
+                     <h3 className="text-lg font-semibold mb-4 text-gray-300">Supporting Cast</h3>
+                     <Form.List name="cast">
+                        {(fields, { add, remove }) => (
+                            <>
+                            {fields.map(({ key, name, ...restField }) => (
+                                <Row key={key} gutter={16} align="middle" className="mb-3">
+                                    <Col span={10}>
+                                        <Form.Item
+                                            {...restField}
+                                            name={[name, 'artist']}
+                                            rules={[{ required: true, message: 'Select Artist' }]}
+                                            className="mb-0"
+                                        >
+                                            <Select showSearch optionFilterProp="label" options={artists} placeholder="Select Artist (Real Name)" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={10}>
+                                        <Form.Item
+                                            {...restField}
+                                            name={[name, 'role']}
+                                            rules={[{ required: true, message: 'Enter Role' }]}
+                                            className="mb-0"
+                                        >
+                                            <Input placeholder="Character Name" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={4}>
+                                        <Button type="text" danger icon={<CloseOutlined />} onClick={() => remove(name)} />
+                                    </Col>
+                                </Row>
+                            ))}
+                            <Form.Item className="mb-0">
+                                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                                    Add Cast Member
+                                </Button>
+                            </Form.Item>
+                            </>
+                        )}
+                    </Form.List>
+                 </div>
+
+
+                <div className='flex justify-end gap-3 mt-5'>
+                  <Button onClick={() => navigate('/admin/movies')}>Cancel</Button>
+                  <Button type='primary' htmlType='submit'>
+                    {params.id ? 'Update Movie' : 'Save Movie'}
+                  </Button>
+                </div>
+              </Form>
+            ),
+          },
+          {
+            key: '2',
+            label: 'Posters',
+            disabled: !movie,
+            children: (
+              <div className='flex flex-col gap-6'>
+                <div className='flex flex-wrap gap-4'>
+                  {movie?.posters?.map((image) => (
+                    <div key={image} className='relative group border border-gray-700 rounded-lg overflow-hidden w-32 h-44'>
+                      <img src={image} alt='poster' className='w-full h-full object-cover' />
+                      <div
+                        className='absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer'
+                        onClick={() => deletePoster(image)}
+                      >
+                        <span className='text-red-500 font-bold text-xl'>🗑</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className='border border-dashed border-gray-600 p-6 rounded-lg bg-gray-900 bg-opacity-50'>
+                   <Upload beforeUpload={(f) => { setFile(f); return false; }} onRemove={() => setFile(null)} maxCount={1} listType='picture'>
+                      <Button type='dashed' className='text-white border-gray-500'> Select Poster Image </Button>
+                   </Upload>
+                   <Button type='primary' onClick={handleImageUpload} disabled={!file} className='mt-4'>
+                      Upload Selected Poster
+                   </Button>
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
+    </div>
   );
 }
 

@@ -229,7 +229,11 @@ const MovieDetails = () => {
       <section className='imdb-hero-section'>
         <div className='hero-poster-wrapper'>
           <img
-            src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+            src={
+              movie.poster_path?.startsWith('http')
+                ? movie.poster_path
+                : `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+            }
             alt={movie.title}
             className='hero-poster-img'
           />
@@ -245,7 +249,11 @@ const MovieDetails = () => {
         <div
           className='hero-media-wrapper'
           style={{
-            backgroundImage: `url(https://image.tmdb.org/t/p/original${movie.backdrop_path})`,
+            backgroundImage: `url(${
+              movie.backdrop_path?.startsWith('http')
+                ? movie.backdrop_path
+                : `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
+            })`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
@@ -351,7 +359,11 @@ const MovieDetails = () => {
                   >
                     <div className='sidebar-poster'>
                       <img
-                        src={`https://image.tmdb.org/t/p/w92${m.poster_path}`}
+                        src={
+                          m.poster_path?.startsWith('http')
+                            ? m.poster_path
+                            : `https://image.tmdb.org/t/p/w92${m.poster_path}`
+                        }
                         alt={m.title}
                       />
                     </div>

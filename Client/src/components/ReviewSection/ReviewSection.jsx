@@ -1,10 +1,6 @@
-/**
- * ReviewSection Component
- * Displays user reviews and submission form
- */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import PropTypes from 'prop-types';
+import { Link, useNavigate } from 'react-router-dom';
+import moment from 'moment';
 import api from '../../services/api';
 import './ReviewSection.css';
 
@@ -17,166 +13,227 @@ const ReviewSection = ({
   movieTitle,
   posterPath,
 }) => {
-  const [reviewText, setReviewText] = useState('');
-  const [reviewTitle, setReviewTitle] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [containsSpoilers, setContainsSpoilers] = useState(false);
+  const navigate = useNavigate();
+  const [isWriting, setIsWriting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  // Check if user has already reviewed
-  const hasReviewed =
-    user &&
-    reviews.some((r) => r.userId?._id === user.id || r.userId === user.id);
+  // Form State
+  const [formData, setFormData] = useState({
+    content: '',
+    title: '', // optional headline
+    isSpoiler: false,
+  });
+
+  // Spoiler toggle state for INDIVIDUAL reviews (by ID)
+  const [revealedSpoilers, setRevealedSpoilers] = useState({});
+
+  const toggleSpoiler = (reviewId) => {
+    setRevealedSpoilers((prev) => ({
+      ...prev,
+      [reviewId]: !prev[reviewId],
+    }));
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user || !reviewText.trim() || !reviewTitle.trim()) return;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!formData.content.trim()) return;
 
-    setLoading(true);
+    setSubmitting(true);
+    setError('');
+
     try {
-      const res = await api.post('/reviews', {
+      const payload = {
         tmdbId: parseInt(tmdbId),
         mediaType,
-        title: reviewTitle,
-        content: reviewText,
-        containsSpoilers, // New field support
-        movieTitle,
+        content: formData.content,
+        title: formData.title, // headline
+        isSpoiler: formData.isSpoiler,
+        movieTitle, // backend uses this for Activity feed
         posterPath,
-      });
+      };
 
-      onReviewSubmitted(res.data || res);
-      setReviewText('');
-      setReviewTitle('');
-      setShowForm(false);
-    } catch (error) {
-      console.error('Review submit error:', error);
-      alert(error.response?.data?.message || 'Failed to submit review');
+      const res = await api.post('/reviews', payload);
+      // res.data should be the new review
+      if (onReviewSubmitted) {
+        onReviewSubmitted(res.data);
+      }
+
+      // Reset form
+      setFormData({ content: '', title: '', isSpoiler: false });
+      setIsWriting(false);
+    } catch (err) {
+      console.error('Review submit error:', err);
+      setError(err.response?.data?.message || 'Failed to post review.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <section className='reviews-container'>
+    <div className='reviews-container'>
+      {/* HEADER */}
       <div className='reviews-header-block'>
         <div className='header-left'>
           <span className='reviews-label'>User Reviews</span>
-          <span className='reviews-count'>{reviews.length}</span>
+          <span className='reviews-count'>
+            {reviews?.length > 0 ? reviews.length : 0}
+          </span>
         </div>
-        {!hasReviewed && user && (
+        {!isWriting && (
           <button
             className='btn-write-review'
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (!user) navigate('/login');
+              else setIsWriting(true);
+            }}
           >
-            {showForm ? 'Cancel' : '+ Review'}
+            + Write Review
           </button>
         )}
       </div>
 
-      {/* Review Form */}
-      {showForm && (
-        <form className='review-form-panel' onSubmit={handleSubmit}>
-          <h4>Write a Review</h4>
-          <input
-            type='text'
-            className='review-input-title'
-            placeholder='Review Title (e.g. A Masterpiece!)'
-            value={reviewTitle}
-            onChange={(e) => setReviewTitle(e.target.value)}
-            maxLength={100}
-            required
-          />
-          <textarea
-            className='review-input-content'
-            placeholder='Write your thoughts here...'
-            value={reviewText}
-            onChange={(e) => setReviewText(e.target.value)}
-            rows={5}
-            minLength={10}
-            required
-          />
-          <div className='form-actions-row'>
-            <label className='spoiler-checkbox'>
-              <input
-                type='checkbox'
-                checked={containsSpoilers}
-                onChange={(e) => setContainsSpoilers(e.target.checked)}
-              />
-              Contains Spoilers
-            </label>
-            <button type='submit' className='btn-submit' disabled={loading}>
-              {loading ? 'Posting...' : 'Post Review'}
-            </button>
-          </div>
-        </form>
-      )}
+      {/* WRITE REVIEW FORM */}
+      {isWriting && (
+        <div className='review-form-panel'>
+          <h4>Write a Review for {movieTitle}</h4>
 
-      {!user && (
-        <div className='login-prompt-banner'>
-          <Link to='/login'>Sign in</Link> to rate and review.
+          {error && (
+            <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <input
+              type='text'
+              name='title'
+              className='review-input-title'
+              placeholder='A short headline... (optional)'
+              value={formData.title}
+              onChange={handleInputChange}
+              disabled={submitting}
+            />
+
+            <textarea
+              name='content'
+              className='review-input-content'
+              rows={5}
+              placeholder='Write your thoughts here...'
+              value={formData.content}
+              onChange={handleInputChange}
+              disabled={submitting}
+              required
+            />
+
+            <div className='form-actions-row'>
+              <label className='spoiler-checkbox'>
+                <input
+                  type='checkbox'
+                  name='isSpoiler'
+                  checked={formData.isSpoiler}
+                  onChange={handleInputChange}
+                  disabled={submitting}
+                />
+                Contains Spoilers
+              </label>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type='button'
+                  className='text-btn'
+                  onClick={() => setIsWriting(false)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type='submit'
+                  className='btn-submit'
+                  disabled={submitting || !formData.content.trim()}
+                >
+                  {submitting ? 'Posting...' : 'Submit'}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       )}
 
-      {/* Reviews List */}
+      {/* REVIEWS LIST */}
       <div className='reviews-feed'>
-        {reviews.length > 0 ? (
-          reviews.map((review) => (
-            <div key={review._id} className='review-card-item'>
-              <div className='review-meta-header'>
-                <h5 className='review-title-text'>{review.title}</h5>
-              </div>
-
-              <div className='review-author-line'>
-                <span className='author-name'>
-                  {review.userId?.name || 'Anonymous'}
-                </span>
-                <span className='review-date'>
-                  {new Date(review.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-
-              <div
-                className={`review-body ${review.containsSpoilers ? 'spoiler-blur' : ''}`}
-              >
-                {review.containsSpoilers && (
-                  <div
-                    className='spoiler-warning'
-                    onClick={(e) =>
-                      e.currentTarget.parentElement.classList.remove(
-                        'spoiler-blur',
-                      )
-                    }
-                  >
-                    <span>Warning: Spoilers! Click to reveal</span>
-                  </div>
-                )}
-                <p>{review.content}</p>
-              </div>
-
-              <div className='review-footer-actions'>
-                <button className='text-btn'>
-                  Helpful ({review.helpfulVotes?.length || 0})
-                </button>
-                <button className='text-btn'>Share</button>
-              </div>
-            </div>
-          ))
+        {!reviews || reviews.length === 0 ? (
+          <div className='no-reviews-msg'>
+            No reviews yet. Be the first to add one!
+          </div>
         ) : (
-          <p className='no-reviews-msg'>No reviews yet. Be the first!</p>
+          reviews.map((rev) => {
+            const isSpoilerBlocked =
+              rev.isSpoiler && !revealedSpoilers[rev._id];
+
+            return (
+              <div key={rev._id} className='review-card-item'>
+                <div className='review-meta-header'>
+                  {rev.title && (
+                    <h5 className='review-title-text'>{rev.title}</h5>
+                  )}
+                  {/* Potentially show user rating if available in review object */}
+                  {rev.authorDetails?.rating && (
+                    <span className='featured-star'>
+                      ★ {rev.authorDetails.rating}
+                    </span>
+                  )}
+                </div>
+
+                <div className='review-author-line'>
+                  <span className='by-text'>by</span>
+                  <Link
+                    to={`/profile/${rev.user?._id || rev.user}`}
+                    className='author-name'
+                  >
+                    {rev.authorName || 'User'}
+                  </Link>
+                  <span className='dot'>•</span>
+                  <span className='review-date'>
+                    {moment(rev.createdAt).format('DD MMMM YYYY')}
+                  </span>
+                </div>
+
+                <div
+                  className={`review-body ${isSpoilerBlocked ? 'spoiler-blur' : ''}`}
+                >
+                  {isSpoilerBlocked && (
+                    <div
+                      className='spoiler-warning'
+                      onClick={() => toggleSpoiler(rev._id)}
+                    >
+                      <span>Warning: Spoilers! (Click to View)</span>
+                    </div>
+                  )}
+                  <p>{rev.content}</p>
+                </div>
+
+                <div className='review-footer-actions'>
+                  <button className='text-btn'>Helpful</button>
+                  {/* Could add Share, Report etc */}
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
-    </section>
+    </div>
   );
-};
-
-ReviewSection.propTypes = {
-  tmdbId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  mediaType: PropTypes.string,
-  reviews: PropTypes.array,
-  user: PropTypes.object,
-  onReviewSubmitted: PropTypes.func,
-  movieTitle: PropTypes.string,
-  posterPath: PropTypes.string,
 };
 
 export default ReviewSection;

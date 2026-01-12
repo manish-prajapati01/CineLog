@@ -12,7 +12,7 @@ import './styles/design-system.css';
 import './index.css';
 
 // Components
-import { Navbar, Footer } from './components';
+import { Navbar, Footer, Spinner } from './components';
 
 // Lazy load pages for code splitting
 const Home = React.lazy(() => import('./pages/Home'));
@@ -91,11 +91,7 @@ function App() {
   return (
     <ErrorBoundary>
       {/* Global Loader Wrapper - Shows spinner when redux global loading is true */}
-      {loading && (
-        <div className='global-loader'>
-          <div className='loader-spinner' />
-        </div>
-      )}
+      {loading && <Spinner />}
 
       {/* Main Application Router */}
       <BrowserRouter>
@@ -174,14 +170,7 @@ function App() {
               </Layout>
             }
           />
-          <Route
-            path='/admin/*'
-            element={
-              <Layout>
-                <Admin />
-              </Layout>
-            }
-          />
+          <Route path='/admin/*' element={<Admin />} />
 
           {/* Auth Routes (no navbar) */}
           {/* These pages stand alone without the standard site navigation */}

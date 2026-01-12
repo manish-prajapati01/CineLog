@@ -239,6 +239,11 @@ const Navbar = () => {
                   <span style={{ fontSize: '0.7em' }}>▼</span>
                 </button>
                 <div className='user-dropdown-content'>
+                  {user.role === 'admin' && (
+                    <Link to='/admin' className='dropdown-item'>
+                      Admin Dashboard
+                    </Link>
+                  )}
                   <Link to='/profile' className='dropdown-item'>
                     Your Profile
                   </Link>

@@ -3,25 +3,21 @@ import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { setLoading } from '../../../redux/loadersSlice';
-import { DeleteMovie, GetAllMovies } from '../../../apis/movies';
-import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, StarFilled } from '@ant-design/icons';
+import { DeleteSeries, GetAllSeries } from '../../../apis/series';
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, DesktopOutlined } from '@ant-design/icons';
 import moment from 'moment';
 
-/**
- * Admin Movies Page
- * Manage movies (add, edit, delete) with smart table.
- */
-function Movies() {
-  const [movies, setMovies] = useState([]);
+function Series() {
+  const [series, setSeries] = useState([]);
   const [searchText, setSearchText] = useState('');
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const getAllMovies = async () => {
+  const getAllSeries = async () => {
     try {
       dispatch(setLoading(true));
-      const response = await GetAllMovies();
-      setMovies(response.movies);
+      const response = await GetAllSeries();
+      setSeries(response.data || []);
       dispatch(setLoading(false));
     } catch (error) {
       dispatch(setLoading(false));
@@ -29,12 +25,12 @@ function Movies() {
     }
   };
 
-  const deleteMovie = async (id) => {
+  const deleteSeries = async (id) => {
     try {
       dispatch(setLoading(true));
-      const response = await DeleteMovie(id);
+      const response = await DeleteSeries(id);
       message.success(response.message);
-      getAllMovies();
+      getAllSeries();
       dispatch(setLoading(false));
     } catch (error) {
       dispatch(setLoading(false));
@@ -43,12 +39,11 @@ function Movies() {
   };
 
   useEffect(() => {
-    getAllMovies();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    getAllSeries();
   }, []);
 
-  const filteredMovies = movies.filter(movie => 
-      movie.name.toLowerCase().includes(searchText.toLowerCase())
+  const filteredSeries = series.filter(s => 
+      s.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const columns = [
@@ -76,7 +71,12 @@ function Movies() {
         render: (text) => <span style={{ fontWeight: 600, fontSize: '1.05rem', color: '#fff' }}>{text}</span>
     },
     {
-      title: 'Release Date',
+        title: 'Total Seasons',
+        dataIndex: 'totalSeasons',
+        render: (text) => <Tag color="blue">{text || 1} Seasons</Tag>
+    },
+    {
+      title: 'First Air Date',
       dataIndex: 'releaseDate',
       render: (text) => <span style={{ color: '#aaa' }}>{moment(text).format('DD MMM YYYY')}</span>,
       sorter: (a, b) => new Date(a.releaseDate) - new Date(b.releaseDate),
@@ -84,27 +84,9 @@ function Movies() {
     { 
         title: 'Genre', 
         dataIndex: 'genre',
-        render: (genre) => {
-           if(Array.isArray(genre)){
-               return genre.map(g => <Tag key={g} color="gold" style={{ color: '#000', fontWeight: 500, marginRight: 5 }}>{g}</Tag>)
-           }
-           return <Tag color="gold" style={{ color: '#000', fontWeight: 500 }}>{genre}</Tag>
-        }
-    },
-    {
-        title: 'Rating',
-        dataIndex: 'rating', // Assuming rating assumes we fetch it or it's on the movie object. If not, mocked.
-        render: (text) => (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <StarFilled style={{ color: '#f5c518' }} />
-                <span style={{ fontWeight: 'bold' }}>{text || 'N/A'}</span>
-            </div>
+        render: (genre) => (
+             <Tag color="cyan" style={{ color: '#000', fontWeight: 500 }}>{genre}</Tag>
         )
-    },
-    { 
-      title: 'Language', 
-      dataIndex: 'language',
-      responsive: ['md']
     },
     {
       title: 'Action',
@@ -116,7 +98,7 @@ function Movies() {
                     <Button 
                         type="text" 
                         icon={<EditOutlined style={{ color: '#5799ef' }} />} 
-                        onClick={() => navigate(`/admin/movies/edit/${record._id}`)}
+                        onClick={() => navigate(`/admin/series/edit/${record._id}`)}
                     />
                 </Tooltip>
                 <Tooltip title="Delete">
@@ -125,8 +107,8 @@ function Movies() {
                         danger
                         icon={<DeleteOutlined />} 
                         onClick={() => {
-                            if(window.confirm('Are you sure you want to delete this movie?')) {
-                                deleteMovie(record._id);
+                            if(window.confirm('Are you sure you want to delete this series?')) {
+                                deleteSeries(record._id);
                             }
                         }}
                     />
@@ -140,30 +122,33 @@ function Movies() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Movies</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <DesktopOutlined style={{ fontSize: '24px', color: '#f5c518' }} />
+              <h1 style={{ fontSize: '1.5rem', margin: 0 }}>TV Shows</h1>
+          </div>
           <Space>
              <Input 
-                placeholder="Search movies..." 
+                placeholder="Search series..." 
                 prefix={<SearchOutlined style={{ color: '#888' }} />} 
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 style={{ width: 250, background: '#1f1f1f', border: 'none', color: '#fff' }}
              />
-             <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/admin/movies/add')}>
-                Add Movie
+             <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/admin/series/add')}>
+                Add TV Show
              </Button>
           </Space>
       </div>
 
       <Table
-        dataSource={filteredMovies}
+        dataSource={filteredSeries}
         columns={columns}
         rowKey='_id'
-        pagination={{ pageSize: 8, position: ['bottomCenter'] }}
+        pagination={{ pageSize: 8 }}
         style={{ background: 'transparent' }}
       />
     </div>
   );
 }
 
-export default Movies;
+export default Series;

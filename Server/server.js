@@ -14,8 +14,18 @@ require("./config/dbConfig");
 const app = express();
 
 // ============ Middleware ============
-// Handle CORS, JSON parsing, and Form data
-app.use(cors());
+// CORS configuration for development and production
+const corsOptions = {
+  origin: [
+    "http://localhost:5173", // Local Vite dev server
+    "http://localhost:3000", // Alternative local port
+    "https://cinelog.vercel.app", // Production Vercel (update with your URL)
+    /\.vercel\.app$/, // Any Vercel preview deployment
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -46,6 +56,7 @@ app.use("/api/watchlist", require("./routes/watchlistRoutes"));
 // ============ Admin / Legacy Routes ============
 // Mounted specially to avoid conflict with TMDB routes
 app.use("/api/admin/movies", require("./routes/moviesRoute")); // Admin Custom Movies
+app.use("/api/admin/series", require("./routes/seriesRoute")); // Admin Custom Series
 app.use("/api/artists", require("./routes/artistRoutes")); // Admin Artists
 app.use("/api/images", require("./routes/imagesRouter")); // Admin Image Upload
 app.use("/api/users", require("./routes/userRoutes")); // Legacy User/Auth

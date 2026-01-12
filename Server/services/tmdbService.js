@@ -550,6 +550,7 @@ const getAiringHollywoodMovies = async (page = 1, filters = {}) => {
   const data = await tmdbRequest("/discover/movie", {
     page,
     with_original_language: "en",
+    region: "US", // Hollywood specific
     "primary_release_date.gte": fortyFiveDaysAgo,
     "primary_release_date.lte": today,
     sort_by: "primary_release_date.desc",
@@ -569,6 +570,7 @@ const getPopularHollywoodMovies = async (page = 1, filters = {}) =>
   discoverMovies({
     page,
     language: "en",
+    region: "US", // Hollywood specific
     sort_by: "popularity.desc",
     vote_count_gte: 500,
     ...filters,
@@ -581,6 +583,7 @@ const getUpcomingHollywoodMovies = async (page = 1, filters = {}) => {
   const data = await tmdbRequest("/discover/movie", {
     page,
     with_original_language: "en",
+    region: "US", // Hollywood specific
     "primary_release_date.gte": tomorrow,
     sort_by: "primary_release_date.asc", // Nearest first
     "vote_count.gte": 0,
@@ -600,6 +603,7 @@ const getTopRatedHollywoodMovies = async (page = 1, filters = {}) =>
   discoverMovies({
     page,
     language: "en",
+    region: "US", // Hollywood specific
     sort_by: "vote_average.desc",
     vote_count_gte: 1000,
     ...filters,

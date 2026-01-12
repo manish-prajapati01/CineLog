@@ -1,68 +1,63 @@
-const Movie = require("../models/movieModels");
+const Series = require("../models/seriesModel");
 const express = require("express");
 const router = express.Router();
 const authMiddlewares = require("../middlewares/authMiddlewares");
 
-//Add movie
-
-router.post("/add-movie", authMiddlewares, async (req, res) => {
+// Add Series
+router.post("/add-series", authMiddlewares, async (req, res) => {
   try {
     req.body.createdBy = req.userId;
-    console.log("req.body", req.body)
-    await Movie.create(req.body);
-    res.status(200).json({ message: "Movie added sucessfully", success: true });
+    await Series.create(req.body);
+    res.status(200).json({ message: "Series added successfully", success: true });
   } catch (error) {
     res.status(500).json({ message: error.message, success: false });
   }
 });
 
-//get all movie
+// Get all Series
 router.get("/", authMiddlewares, async (req, res) => {
   try {
-    const movies = await Movie.find()
-      .populate("cast.artist") // Populate nested artist in cast array
+    const series = await Series.find()
+      .populate("cast")
       .populate("hero")
       .populate("heroine")
       .populate("director")
-      .populate("writer")
-      .populate("createdBy");
-    res.status(200).json({ movies, success: true });
+      .populate("createdBy")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ data: series, success: true });
   } catch (error) {
     res.status(500).json({ message: error.message, success: false });
   }
 });
 
-//get movies by id
-
+// Get Series by ID
 router.get("/:id", authMiddlewares, async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.id)
-      .populate("cast.artist")
+    const series = await Series.findById(req.params.id)
+      .populate("cast")
       .populate("hero")
       .populate("heroine")
       .populate("director")
-      .populate("writer")
       .populate("createdBy");
-    res.status(200).json({ data: movie, success: true });
+    res.status(200).json({ data: series, success: true });
   } catch (error) {
     res.status(500).json({ message: error.message, success: false });
   }
 });
 
-//Update movie
+// Update Series
 router.put("/:id", authMiddlewares, async (req, res) => {
   try {
-    const updatedMovie = await Movie.findByIdAndUpdate(
+    const updatedSeries = await Series.findByIdAndUpdate(
       req.params.id,
       req.body,
-      // { ...req.body, cast: "" },
       { new: true }
     );
     res
       .status(200)
       .json({
-        message: "Movie Updated sucessfully",
-        data: updatedMovie,
+        message: "Series Updated successfully",
+        data: updatedSeries,
         success: true,
       });
   } catch (error) {
@@ -70,13 +65,13 @@ router.put("/:id", authMiddlewares, async (req, res) => {
   }
 });
 
-//Delete movie
+// Delete Series
 router.delete("/:id", authMiddlewares, async (req, res) => {
   try {
-    const updateMovie = await Movie.findByIdAndDelete(req.params.id, { new: true });
+    const deletedSeries = await Series.findByIdAndDelete(req.params.id);
     res
       .status(200)
-      .json({ message: "Movie Deleted sucessfully", success: true, data: updateMovie });
+      .json({ message: "Series Deleted successfully", success: true, data: deletedSeries });
   } catch (error) {
     res.status(500).json({ message: error.message, success: false });
   }
