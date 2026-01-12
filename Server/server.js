@@ -19,7 +19,7 @@ const corsOptions = {
   origin: [
     "http://localhost:5173", // Local Vite dev server
     "http://localhost:3000", // Alternative local port
-    "https://cinelog.vercel.app", // Production Vercel (update with your URL)
+    "https://cinelog-p441.onrender.com", // Production Render Server
     /\.vercel\.app$/, // Any Vercel preview deployment
   ],
   credentials: true,
