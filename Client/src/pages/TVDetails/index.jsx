@@ -50,8 +50,8 @@ const TVDetails = () => {
         ]);
         setShow(showRes.data);
         setCredits(creditsRes.data);
-        setSimilar(similarRes.data?.results || []);
-        setVideos(videosRes.data?.results || []);
+        setSimilar(similarRes.data?.results || similarRes.results || []);
+        setVideos(videosRes.data?.results || videosRes.results || []);
       } catch (error) {
         console.error('Error fetching TV show:', error);
       } finally {
@@ -89,10 +89,10 @@ const TVDetails = () => {
         ]);
 
         setInWatchlist(
-          watchlistRes.data?.inWatchlist || watchlistRes.inWatchlist || false,
+          watchlistRes?.inWatchlist || watchlistRes?.data?.inWatchlist || false,
         );
 
-        const score = ratingRes?.data?.score;
+        const score = ratingRes?.data?.score || ratingRes?.score;
         if (score) setUserRating(score);
       } catch (error) {
         console.warn('User data fetch error', error);
@@ -134,7 +134,7 @@ const TVDetails = () => {
       if (!id) return;
       try {
         const res = await tvService.getTVSeason(id, activeSeason);
-        setActiveSeasonData(res.data);
+        setActiveSeasonData(res.data || res);
       } catch (error) {
         console.error('Error fetching season:', error);
       }

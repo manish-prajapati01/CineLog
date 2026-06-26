@@ -514,9 +514,21 @@
 }
 
 @media (max-width: 768px) {
+  .movie-details-imdb {
+    padding-top: 60px;
+    padding-bottom: 40px;
+  }
+
+  .imdb-header-container {
+    padding: 16px 12px 10px;
+    flex-direction: column;
+    gap: 15px;
+  }
+
   .imdb-hero-section {
     grid-template-columns: 1fr;
     height: auto;
+    padding: 0 12px;
   }
 
   .hero-poster-wrapper {
@@ -524,15 +536,174 @@
   }
 
   .hero-media-wrapper {
-    height: 250px;
-  }
-
-  .imdb-header-container {
-    flex-direction: column;
-    gap: 15px;
+    height: 220px;
   }
 
   .header-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
+  }
+
+  .header-meta-row {
+    font-size: 0.85rem;
+    gap: 8px;
+  }
+
+  .imdb-header-rating {
+    gap: 20px;
+  }
+
+  .imdb-content-grid {
+    padding: 0 12px;
+    margin: 20px auto;
+    gap: 24px;
+  }
+
+  .sidebar-widget {
+    min-width: 100%;
+  }
+
+  .play-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.8rem;
+  }
+
+  .play-label {
+    font-size: 1rem;
+  }
+
+  .play-time {
+    font-size: 0.85rem;
+  }
+
+  .genres-badges {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .genre-chip {
+    padding: 5px 12px;
+    font-size: 0.85rem;
+  }
+
+  .plot-text {
+    font-size: 1rem;
+  }
+
+  .credit-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .credit-label {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .movie-details-imdb {
+    padding-top: 56px;
+    padding-bottom: 30px;
+  }
+
+  .imdb-header-container {
+    padding: 12px 10px 8px;
+  }
+
+  .header-title {
+    font-size: 1.4rem;
+    line-height: 1.2;
+  }
+
+  .header-meta-row {
+    font-size: 0.75rem;
+    gap: 6px;
+  }
+
+  .imdb-header-rating {
+    gap: 16px;
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .rating-label {
+    font-size: 0.65rem;
+  }
+
+  .score-big {
+    font-size: 1.1rem;
+  }
+
+  .star-icon {
+    font-size: 1.2rem;
+  }
+
+  .imdb-hero-section {
+    padding: 0 10px;
+  }
+
+  .hero-media-wrapper {
+    height: 180px;
+  }
+
+  .hero-media-overlay {
+    padding: 12px 16px;
+  }
+
+  .play-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+  }
+
+  .play-label {
+    font-size: 0.9rem;
+  }
+
+  .play-time {
+    font-size: 0.75rem;
+  }
+
+  .imdb-content-grid {
+    padding: 0 10px;
+    margin: 16px auto;
+    gap: 20px;
+  }
+
+  .section-header-simple h3 {
+    font-size: 1.1rem;
+    padding-left: 8px;
+  }
+
+  .genres-badges {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .genre-chip {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+  }
+
+  .plot-text {
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+
+  .credit-row {
+    font-size: 0.9rem;
+    padding: 10px 0;
+  }
+
+  .sidebar-poster {
+    width: 55px;
+  }
+
+  .sidebar-title {
+    font-size: 0.9rem;
+  }
+
+  .mini-rating {
+    font-size: 0.8rem;
   }
 }

@@ -410,18 +410,124 @@
 }
 
 @media (max-width: 768px) {
+  .navbar-container {
+    padding: 0 12px;
+    gap: 0.75rem;
+  }
+
   .navbar-search {
     display: none;
-  } /* Hide search on mobile initally */
+  }
+
   .menu-btn span {
     display: none;
-  } /* Hide "Menu" text */
+  }
+
+  .menu-btn {
+    padding: 6px;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+  }
+
   .nav-link-btn span {
     display: none;
-  } /* Hide "Watchlist" text */
+  }
+
+  .nav-link-btn {
+    padding: 6px;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+  }
+
+  .navbar-actions {
+    gap: 0.5rem;
+  }
+
+  .separator {
+    display: none;
+  }
+
+  .imdb-pro {
+    display: none;
+  }
+
+  .user-menu-trigger span {
+    display: none;
+  }
+
+  .user-menu-trigger {
+    padding: 6px;
+  }
+
+  .mega-menu-content {
+    padding: 20px;
+    max-height: calc(100vh - 60px);
+  }
+
   .mega-menu-grid {
     grid-template-columns: 1fr;
-    gap: 30px;
+    gap: 24px;
+  }
+
+  .menu-column h3 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  .menu-column ul {
+    gap: 10px;
+  }
+
+  .menu-column a {
+    font-size: 0.9rem;
+  }
+
+  .user-dropdown-content {
+    right: -12px;
+    min-width: 140px;
+  }
+
+  /* Search Results Mobile */
+  .search-results {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    height: 56px;
+  }
+
+  .navbar-container {
+    padding: 0 8px;
+    gap: 0.5rem;
+  }
+
+  .navbar-logo {
+    font-size: 1rem;
+    padding: 3px 6px;
+    height: 28px;
+  }
+
+  .menu-btn,
+  .nav-link-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mega-menu-content {
+    padding: 16px;
+  }
+
+  .mega-menu-grid {
+    gap: 20px;
   }
 }
 

@@ -52,21 +52,23 @@ const MovieCard = ({
       ? data?.profile_path || data?.profilePath
       : data?.posterPath || data?.poster_path;
 
-  // Check Watchlist Status (Optimistic or Lazy)
   useEffect(() => {
-    // Only check if user is logged in
-    if (user && data && finalMediaType !== 'person') {
-      const checkWatchlist = async () => {
-        try {
-          const res = await api.get(`/watchlist/check/${id}/${finalMediaType}`);
-          setInWatchlist(res.data?.inWatchlist || res.inWatchlist || false);
-        } catch (err) {
-          // silent fail
+    if (!user || !id || finalMediaType === 'person') return;
+    let cancelled = false;
+    const checkWatchlist = async () => {
+      try {
+        const res = await api.get(`/watchlist/check/${id}/${finalMediaType}`);
+        if (!cancelled) {
+          setInWatchlist(res?.inWatchlist || res?.data?.inWatchlist || false);
         }
-      };
-      checkWatchlist();
-    }
-  }, [id, finalMediaType, user, data]);
+      } catch {
+        // silent fail
+      }
+    };
+    checkWatchlist();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, finalMediaType, user?.id]);
 
   if (!data) return null;
 

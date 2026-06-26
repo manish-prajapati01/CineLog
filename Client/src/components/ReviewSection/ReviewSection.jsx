@@ -59,9 +59,9 @@ const ReviewSection = ({
         tmdbId: parseInt(tmdbId),
         mediaType,
         content: formData.content,
-        title: formData.title, // headline
-        isSpoiler: formData.isSpoiler,
-        movieTitle, // backend uses this for Activity feed
+        title: formData.title || 'Review',
+        containsSpoilers: formData.isSpoiler,
+        movieTitle,
         posterPath,
       };
 
@@ -76,7 +76,7 @@ const ReviewSection = ({
       setIsWriting(false);
     } catch (err) {
       console.error('Review submit error:', err);
-      setError(err.response?.data?.message || 'Failed to post review.');
+      setError(err.message || 'Failed to post review.');
     } finally {
       setSubmitting(false);
     }

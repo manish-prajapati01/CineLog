@@ -47,9 +47,9 @@ const Profile = () => {
           api.get('/ratings/user/me'),
         ]);
 
-        const wl = watchlistRes.data?.data || watchlistRes.data || [];
-        const rv = reviewsRes.data?.data || reviewsRes.data || [];
-        const rt = ratingsRes.data?.data || ratingsRes.data || [];
+        const wl = watchlistRes?.data || watchlistRes || [];
+        const rv = reviewsRes?.data || reviewsRes || [];
+        const rt = ratingsRes?.data || ratingsRes || [];
 
         setWatchlist(wl);
         setReviews(rv);
@@ -299,12 +299,31 @@ const Profile = () => {
                     {reviews.map((review) => (
                       <div key={review._id} className='review-card'>
                         <div className='review-movie-info'>
-                          <span className='review-movie-title'>
+                          {review.posterPath && (
+                            <Link
+                              to={`/${review.mediaType}/${review.tmdbId}`}
+                              className='review-poster-thumb'
+                            >
+                              <img
+                                src={`https://image.tmdb.org/t/p/w92${review.posterPath}`}
+                                alt={review.movieTitle || 'Poster'}
+                              />
+                            </Link>
+                          )}
+                          <div className='review-movie-text'>
+                            <Link
+                              to={`/${review.mediaType}/${review.tmdbId}`}
+                              className='review-movie-title-link'
+                            >
                             {review.movieTitle || 'Unknown Title'}
-                          </span>
-                          <span className='review-date'>
-                            {new Date(review.createdAt).toLocaleDateString()}
-                          </span>
+                            </Link>
+                            <span className='review-media-badge'>
+                              {review.mediaType === 'movie' ? '🎬 Movie' : '📺 TV'}
+                            </span>
+                            <span className='review-date'>
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
                         <p className='review-text'>{review.content}</p>
                         <button

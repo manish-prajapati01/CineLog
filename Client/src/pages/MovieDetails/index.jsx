@@ -53,8 +53,8 @@ const MovieDetails = () => {
         );
         setMovie(movieRes.data);
         setCredits(creditsRes.data);
-        setSimilar(similarRes.data?.results || []);
-        setVideos(videosRes.data?.results || []);
+        setSimilar(similarRes.data?.results || similarRes.results || []);
+        setVideos(videosRes.data?.results || videosRes.results || []);
       } catch (error) {
         console.error('Error fetching movie:', error);
         // setError(error); // Use error state
@@ -68,7 +68,7 @@ const MovieDetails = () => {
     }
   }, [id]);
 
-  // Fetch reviews separate effect
+  // Fetch reviews
   useEffect(() => {
     const fetchReviews = async () => {
       if (!id) return;
@@ -93,10 +93,10 @@ const MovieDetails = () => {
         ]);
 
         setInWatchlist(
-          watchlistRes.data?.inWatchlist || watchlistRes.inWatchlist || false,
+          watchlistRes?.inWatchlist || watchlistRes?.data?.inWatchlist || false,
         );
 
-        const score = ratingRes?.data?.score;
+        const score = ratingRes?.data?.score || ratingRes?.score;
         if (score) setUserRating(score);
       } catch (error) {
         console.warn('User data fetch error', error);

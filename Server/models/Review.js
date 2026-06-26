@@ -21,6 +21,14 @@ const reviewSchema = new mongoose.Schema(
       enum: ["movie", "tv"],
       required: true,
     },
+    movieTitle: {
+      type: String,
+      default: null,
+    },
+    posterPath: {
+      type: String,
+      default: null,
+    },
     title: {
       type: String,
       required: [true, "Review title is required"],

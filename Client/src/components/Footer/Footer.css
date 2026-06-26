@@ -42,3 +42,38 @@
   color: #888;
   font-size: 0.9rem;
 }
+
+/* --- Mobile Responsive --- */
+@media (max-width: 768px) {
+  .site-footer {
+    padding: 1.5rem 1rem;
+  }
+
+  .footer-content {
+    gap: 0.75rem;
+  }
+
+  .footer-logo {
+    font-size: 1.25rem;
+    padding: 3px 10px;
+  }
+
+  .footer-copyright {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-footer {
+    padding: 1rem;
+  }
+
+  .footer-logo {
+    font-size: 1.1rem;
+    padding: 2px 8px;
+  }
+
+  .footer-copyright {
+    font-size: 0.75rem;
+  }
+}

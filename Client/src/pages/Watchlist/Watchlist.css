@@ -193,3 +193,68 @@
     font-size: 1.8rem;
   }
 }
+
+@media (max-width: 480px) {
+  .watchlist-page {
+    padding: 70px 0.75rem 1.5rem;
+  }
+
+  .watchlist-page .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .watchlist-page .header-main h1 {
+    font-size: 1.5rem;
+  }
+
+  .watchlist-count {
+    font-size: 0.85rem;
+  }
+
+  .filter-tabs {
+    gap: 8px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-tabs .filter-btn {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .watchlist-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .remove-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+    opacity: 1;
+  }
+
+  .empty-watchlist {
+    padding: 3rem 1rem;
+  }
+
+  .empty-watchlist h2 {
+    font-size: 1.4rem;
+  }
+
+  .empty-watchlist p {
+    font-size: 0.95rem;
+  }
+
+  .browse-btn {
+    padding: 10px 24px;
+    font-size: 0.95rem;
+  }
+}

@@ -183,3 +183,71 @@
 .movie-card.large .card-title {
   font-size: 1.1rem;
 }
+
+/* --- Mobile Responsive --- */
+@media (max-width: 768px) {
+  .movie-card {
+    border-radius: var(--radius-sm);
+  }
+
+  .card-info {
+    padding: 8px;
+    gap: 4px;
+  }
+
+  .card-rating-row {
+    font-size: 0.8rem;
+    gap: 4px;
+    margin-bottom: 2px;
+  }
+
+  .card-title {
+    font-size: 0.85rem;
+    -webkit-line-clamp: 2;
+  }
+
+  .card-actions {
+    padding-top: 8px;
+  }
+
+  .watchlist-btn-text {
+    font-size: 0.8rem;
+    padding: 6px 0;
+  }
+
+  .trailer-btn {
+    font-size: 0.8rem;
+    padding: 4px 0;
+  }
+
+  .card-watchlist-btn {
+    width: 28px;
+    height: 36px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-info {
+    padding: 6px;
+  }
+
+  .card-rating-row {
+    font-size: 0.75rem;
+  }
+
+  .card-title {
+    font-size: 0.8rem;
+  }
+
+  .watchlist-btn-text {
+    font-size: 0.75rem;
+    padding: 5px 0;
+  }
+
+  .card-watchlist-btn {
+    width: 24px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+}

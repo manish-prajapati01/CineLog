@@ -180,9 +180,11 @@ const Navbar = () => {
                   >
                     <img
                       src={
-                        item.posterPath ||
-                        item.profilePath ||
-                        '/placeholder.jpg'
+                        item.posterPath
+                          ? `https://image.tmdb.org/t/p/w92${item.posterPath}`
+                          : item.profilePath
+                            ? `https://image.tmdb.org/t/p/w92${item.profilePath}`
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.title || item.name || '?')}&background=1a1a2e&color=f5c518&size=92`
                       }
                       alt=''
                       className='result-poster'

@@ -39,7 +39,35 @@ const HeroCarousel = ({ items = [] }) => {
     setTimeout(() => setIsAnimating(false), 500);
   };
 
-  if (!items || items.length === 0) return null;
+  if (!items || items.length === 0) {
+    return (
+      <div className='hero-container hero-skeleton'>
+        <div className='hero-slider'>
+          <div className='hero-slide-skeleton'>
+            <div className='hero-skeleton-backdrop' />
+            <div className='hero-skeleton-content'>
+              <div className='hero-skeleton-poster' />
+              <div className='hero-skeleton-info'>
+                <div className='hero-skeleton-title' />
+                <div className='hero-skeleton-meta' />
+                <div className='hero-skeleton-text' />
+                <div className='hero-skeleton-text short' />
+                <div className='hero-skeleton-actions'>
+                  <div className='hero-skeleton-btn' />
+                  <div className='hero-skeleton-btn' />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className='hero-up-next hero-skeleton-side'>
+          {[1, 2, 3].map(i => (
+            <div key={i} className='up-next-item-skeleton' />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Carousel Logic:
   // We only show the top 6 trending items in the main slider

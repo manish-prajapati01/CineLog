@@ -15,6 +15,10 @@ if (!uri) {
 
 mongoose.connect(uri, {
   dbName: "movie-review", // Force specific database name
+  serverSelectionTimeoutMS: 10000, // 10 second timeout
+}).catch((err) => {
+  console.error("❌ MongoDB initial connection error:", err.message);
+  console.error("   Check your network / MongoDB Atlas IP whitelist.");
 });
 
 const connection = mongoose.connection;

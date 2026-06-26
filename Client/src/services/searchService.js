@@ -10,6 +10,9 @@ const searchService = {
   searchMulti: (query, page = 1) =>
     api.get(`/search/multi?q=${encodeURIComponent(query)}&page=${page}`),
 
+  multiSearch: (query, page = 1) =>
+    api.get(`/search/multi?q=${encodeURIComponent(query)}&page=${page}`),
+
   // Search movies only
   searchMovies: (query, page = 1) =>
     api.get(`/search/movie?q=${encodeURIComponent(query)}&page=${page}`),

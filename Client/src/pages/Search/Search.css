@@ -201,3 +201,83 @@
     padding: 0 1rem 2rem;
   }
 }
+
+@media (max-width: 480px) {
+  .search-page {
+    padding: 16px 0.75rem 0.75rem;
+  }
+
+  .search-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .search-query {
+    font-size: 0.85rem;
+  }
+
+  .result-count {
+    font-size: 0.85rem;
+  }
+
+  .search-filters {
+    gap: 8px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .search-results {
+    padding: 0 0.75rem 1.5rem;
+  }
+
+  .results-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .person-info {
+    padding: 8px;
+  }
+
+  .person-info strong {
+    font-size: 0.9rem;
+  }
+
+  .person-info span {
+    font-size: 0.75rem;
+  }
+
+  .pagination {
+    margin-top: 2rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .pagination button {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+
+  .no-results,
+  .no-query {
+    padding: 3rem 1rem;
+  }
+
+  .no-results h2,
+  .no-query h2 {
+    font-size: 1.4rem;
+  }
+
+  .no-results p,
+  .no-query p {
+    font-size: 0.95rem;
+  }
+}

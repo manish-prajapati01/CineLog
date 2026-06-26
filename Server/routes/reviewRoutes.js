@@ -23,23 +23,46 @@ router.get("/user/my-reviews", protect, async (req, res) => {
       .limit(50)
       .lean();
 
-    // Populate missing titles/posters from Movie collection
     const populatedReviews = await Promise.all(
       reviews.map(async (review) => {
-        if (!review.movieTitle || !review.posterPath) {
+        if (review.movieTitle && review.posterPath) return review;
+
+        let movieTitle = review.movieTitle;
+        let posterPath = review.posterPath;
+
+        if (!movieTitle || !posterPath) {
           const movie = await Movie.findOne({
             tmdbId: review.tmdbId,
             mediaType: review.mediaType,
           });
           if (movie) {
-            return {
-              ...review,
-              movieTitle: review.movieTitle || movie.title,
-              posterPath: review.posterPath || movie.posterPath,
-            };
+            movieTitle = movieTitle || movie.title;
+            posterPath = posterPath || movie.posterPath;
           }
         }
-        return review;
+
+        if (!movieTitle) {
+          try {
+            const { getMovieDetails, getTVDetails } = require("../services/tmdbService");
+            const tmdbData =
+              review.mediaType === "movie"
+                ? await getMovieDetails(review.tmdbId)
+                : await getTVDetails(review.tmdbId);
+            movieTitle = tmdbData.title || tmdbData.name || null;
+            posterPath = posterPath || tmdbData.poster_path || null;
+
+            if (movieTitle) {
+              await Review.updateOne(
+                { _id: review._id },
+                { movieTitle, posterPath }
+              );
+            }
+          } catch (tmdbErr) {
+            // Unreachable TMDB is ignored
+          }
+        }
+
+        return { ...review, movieTitle, posterPath };
       })
     );
 
@@ -62,7 +85,6 @@ router.post("/", protect, async (req, res) => {
       posterPath,
     } = req.body;
 
-    // Check if user already reviewed this
     const existingReview = await Review.findOne({
       userId: req.userId,
       tmdbId,
@@ -83,9 +105,10 @@ router.post("/", protect, async (req, res) => {
       title,
       content,
       containsSpoilers,
+      movieTitle: movieTitle || null,
+      posterPath: posterPath || null,
     });
 
-    // Create/update movie reference
     await Movie.getOrCreate(tmdbId, mediaType, movieTitle, posterPath);
     await Movie.updateStats(tmdbId, mediaType);
 
