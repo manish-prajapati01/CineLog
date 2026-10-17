@@ -15,16 +15,7 @@ const app = express();
 
 // ============ Middleware ============
 // CORS configuration for development and production
-const corsOptions = {
-  origin: [
-    "http://localhost:5173", // Local Vite dev server
-    "http://localhost:3000", // Alternative local port
-    "https://cinelog-p441.onrender.com", // Production Render Server
-    ...(process.env.CLIENT_ORIGIN ? process.env.CLIENT_ORIGIN.split(",") : []),
-  ],
-  credentials: true,
-  optionsSuccessStatus: 200,
-};
+const corsOptions = require('./config/corsConfig');
 app.use(cors(corsOptions));
 app.use((req, res, next) => { res.set('X-Content-Type-Options', 'nosniff'); res.set('Referrer-Policy', 'strict-origin-when-cross-origin'); next(); });
 app.use(express.json({ limit: "1mb" }));
