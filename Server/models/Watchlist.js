@@ -23,6 +23,10 @@ const watchlistItemSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  status: { type: String, enum: ['planned', 'watching', 'watched'], default: 'planned' },
+  collectionName: { type: String, trim: true, maxlength: 40, default: '' },
+  watchedAt: { type: Date, default: null },
+  notes: { type: String, maxlength: 1000, default: '' },
   addedAt: {
     type: Date,
     default: Date.now,

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './Dropdown.css';
 
 const Dropdown = ({ options, value, onChange, placeholder = 'Select...' }) => {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import './CastList.css';
@@ -23,7 +22,7 @@ const CastList = ({ cast }) => {
                 src={
                   person.profile_path
                     ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
-                    : 'https://via.placeholder.com/138x175?text=No+Image'
+                    : '/favicon.svg'
                 }
                 alt={person.name}
                 loading='lazy'

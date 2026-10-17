@@ -1,52 +1,54 @@
+import NotFound from '../NotFound';
+import { lazy, Suspense } from 'react';
 import { useSelector } from 'react-redux';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
 import AdminLayout from './AdminLayout';
-import Dashboard from './Dashboard';
-import Movies from './Movies';
-import MovieForm from './Movies/MovieForm';
-import Artists from './Artists';
-import Users from './Users';
-import Series from './Series'; // New Series Page
-import SeriesForm from './Series/SeriesForm';
+const Dashboard = lazy(() => import('./Dashboard'));
+const Movies = lazy(() => import('./Movies'));
+const MovieForm = lazy(() => import('./Movies/MovieForm'));
+const Artists = lazy(() => import('./Artists'));
+const Users = lazy(() => import('./Users'));
+const Series = lazy(() => import('./Series')); // New Series Page
+const SeriesForm = lazy(() => import('./Series/SeriesForm'));
 import './index.css';
 
 function Admin() {
   const { user } = useSelector((state) => state.users);
   const navigate = useNavigate();
 
-  // IMDb-inspired Dark Theme Token
+  // Shared CineLog theme
   const customTheme = {
     algorithm: theme.darkAlgorithm,
     token: {
-      colorPrimary: '#f5c518', // IMDb Gold
-      colorBgBase: '#121212',  // Deep Black/Grey
+      colorPrimary: '#dfb582',
+      colorBgBase: '#111116', // Deep Black/Grey
       colorTextBase: '#ffffff',
-      colorLink: '#5799ef',
+      colorLink: '#dfb582',
       borderRadius: 4,
-      fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+      fontFamily: "'Source Sans 3', sans-serif",
     },
     components: {
       Layout: {
-        headerBg: '#1f1f1f',
-        siderBg: '#121212',
-        triggerBg: '#1f1f1f',
+        headerBg: '#1c1b22',
+        siderBg: '#111116',
+        triggerBg: '#1c1b22',
       },
       Menu: {
-        darkItemBg: '#121212',
+        darkItemBg: '#111116',
         darkItemColor: '#ffffff',
-        darkItemHoverBg: '#1f1f1f',
-        darkItemSelectedBg: 'rgba(245, 197, 24, 0.2)', // Gold with opacity
-        darkItemSelectedColor: '#f5c518',
+        darkItemHoverBg: '#1c1b22',
+        darkItemSelectedBg: 'rgba(223, 181, 130, 0.12)',
+        darkItemSelectedColor: '#dfb582',
       },
       Card: {
-        colorBgContainer: '#1f1f1f', 
-        headerBg: '#1f1f1f',
+        colorBgContainer: '#1c1b22',
+        headerBg: '#1c1b22',
       },
       Table: {
-        headerBg: '#1a1a1a', 
+        headerBg: '#1a1a1a',
         rowHoverBg: '#252525',
-      }
+      },
     },
   };
 
@@ -55,31 +57,38 @@ function Admin() {
       <div className='admin-container'>
         {user?.role === 'admin' ? (
           <AdminLayout>
-            <Routes>
-              <Route path='/' element={<Dashboard />} />
-              <Route path='/dashboard' element={<Dashboard />} />
-              
-              {/* Movies */}
-              <Route path='/movies' element={<Movies />} />
-              <Route path='/movies/add' element={<MovieForm />} />
-              <Route path='/movies/edit/:id' element={<MovieForm />} />
-              
-              {/* Series - New Section */}
-              <Route path='/series' element={<Series />} />
-              <Route path='/series/add' element={<SeriesForm />} />
-              <Route path='/series/edit/:id' element={<SeriesForm />} />
+            <Suspense
+              fallback={<div className='page-loader'>Loading workspace...</div>}
+            >
+              <Routes>
+                <Route path='/' element={<Dashboard />} />
+                <Route path='/dashboard' element={<Dashboard />} />
 
-              {/* Other Modules */}
-              <Route path='/artists' element={<Artists />} />
-              <Route path='/users' element={<Users />} />
-            </Routes>
+                {/* Movies */}
+                <Route path='/movies' element={<Movies />} />
+                <Route path='/movies/add' element={<MovieForm />} />
+                <Route path='/movies/edit/:id' element={<MovieForm />} />
+
+                {/* Series - New Section */}
+                <Route path='/series' element={<Series />} />
+                <Route path='/series/add' element={<SeriesForm />} />
+                <Route path='/series/edit/:id' element={<SeriesForm />} />
+
+                {/* Other Modules */}
+                <Route path='/artists' element={<Artists />} />
+                <Route path='/users' element={<Users />} />
+                <Route path='*' element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </AdminLayout>
         ) : (
-          <div className='w-full h-screen flex flex-col justify-center items-center text-xl text-gray-500 bg-[#121212]'>
-            <h1 className="text-3xl font-bold text-[#f5c518] mb-4">Access Denied</h1>
-            <p className="mb-6">You are not authorized to view this page.</p>
+          <div className='w-full h-screen flex flex-col justify-center items-center text-xl text-gray-500 bg-[#111116]'>
+            <h1 className='text-3xl font-bold text-[#dfb582] mb-4'>
+              Access Denied
+            </h1>
+            <p className='mb-6'>You are not authorized to view this page.</p>
             <button
-              className='px-6 py-2 bg-[#f5c518] text-black font-bold rounded hover:bg-[#e2b616] transition-all'
+              className='px-6 py-2 bg-[#dfb582] text-black font-bold rounded hover:bg-[#edcba4] transition-all'
               onClick={() => navigate('/')}
             >
               Go Home

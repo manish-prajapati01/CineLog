@@ -10,7 +10,7 @@ const movieSchema = new mongoose.Schema(
     tmdbId: {
       type: Number,
       required: true,
-      unique: true,
+
     },
     title: {
       type: String,
@@ -62,11 +62,12 @@ movieSchema.statics.getOrCreate = async function (
   title,
   posterPath
 ) {
-  let movie = await this.findOne({ tmdbId, mediaType });
-  if (!movie) {
-    movie = await this.create({ tmdbId, mediaType, title, posterPath });
+  try {
+    return await this.findOneAndUpdate({ tmdbId, mediaType }, { $setOnInsert: { tmdbId, mediaType, title, posterPath } }, { upsert: true, new: true, runValidators: true });
+  } catch (error) {
+    if (error.code === 11000) return this.findOne({ tmdbId, mediaType });
+    throw error;
   }
-  return movie;
 };
 
 // Static method to update stats
@@ -87,4 +88,4 @@ movieSchema.statics.updateStats = async function (tmdbId, mediaType) {
   );
 };
 
-module.exports = mongoose.model("Movie", movieSchema);
+module.exports = mongoose.model("Movie", movieSchema, "media_references");

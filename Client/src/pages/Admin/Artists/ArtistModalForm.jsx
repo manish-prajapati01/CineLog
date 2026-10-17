@@ -1,4 +1,4 @@
-import { Button, Form, Modal, Tabs, Upload, message } from 'antd';
+import { Button, Form, Modal, Tabs, Upload, message, Select } from 'antd';
 import Input from 'antd/es/input/Input';
 import { antValidatioError } from '../../../helpers';
 import { useDispatch } from 'react-redux';
@@ -48,8 +48,9 @@ function ArtistModalForm({
       formData.append('image', file);
       dispatch(setLoading(true));
       const response = await UploadImage(formData);
+      let updatedData;
       if (response.success) {
-       const upadtedData= await UpadteArtist(selectedArtist._id, {
+        updatedData = await UpadteArtist(selectedArtist._id, {
           ...selectedArtist,
           images: [...(selectedArtist?.images || []), response.data],
         });
@@ -57,7 +58,7 @@ function ArtistModalForm({
       // reloadData();
       dispatch(setLoading(false));
       message.success(response.message);
-      setSelectedArtist(upadtedData);
+      if (updatedData) setSelectedArtist(updatedData.data);
       // setShowArtistModal(false);
     } catch (error) {
       message.error(error.message);
@@ -133,17 +134,21 @@ function ArtistModalForm({
                   name='profession'
                   rules={antValidatioError}
                 >
-                  <select>
-                    <option value='Actor'>Actor</option>
-                    <option value='Acteress'>Acteress</option>
-                    <option value='Director'>Dierector</option>
-                    <option value='Producer'>Producer</option>
-                    <option value='Music Director'>Music Director</option>
-                    <option value='Singer'>Singer</option>
-                    <option value='Lyricist'>Lyricist</option>
-                    <option value='Cinematographer'>Cinematographer</option>
-                    <option value='Editor'>Editor</option>
-                  </select>
+                  <Select aria-label='Profession'>
+                    <Select.Option value='Actor'>Actor</Select.Option>
+                    <Select.Option value='Acteress'>Actress</Select.Option>
+                    <Select.Option value='Director'>Director</Select.Option>
+                    <Select.Option value='Producer'>Producer</Select.Option>
+                    <Select.Option value='Music Director'>
+                      Music Director
+                    </Select.Option>
+                    <Select.Option value='Singer'>Singer</Select.Option>
+                    <Select.Option value='Lyricist'>Lyricist</Select.Option>
+                    <Select.Option value='Cinematographer'>
+                      Cinematographer
+                    </Select.Option>
+                    <Select.Option value='Editor'>Editor</Select.Option>
+                  </Select>
                 </Form.Item>
                 <Form.Item
                   label='DEBUT MOVIES'

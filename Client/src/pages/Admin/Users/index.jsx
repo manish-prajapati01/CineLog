@@ -29,9 +29,10 @@ function Users() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filteredUsers = users.filter(user => 
-      user.name.toLowerCase().includes(searchText.toLowerCase()) || 
-      user.email.toLowerCase().includes(searchText.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchText.toLowerCase()),
   );
 
   const columns = [
@@ -40,11 +41,14 @@ function Users() {
       dataIndex: 'name',
       sorter: (a, b) => a.name.localeCompare(b.name),
       render: (text) => (
-          <Space>
-              <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#f5c518', verticalAlign: 'middle' }} />
-              <span style={{ fontWeight: 600, color: '#fff' }}>{text}</span>
-          </Space>
-      )
+        <Space wrap>
+          <Avatar
+            icon={<UserOutlined />}
+            style={{ backgroundColor: '#dfb582', verticalAlign: 'middle' }}
+          />
+          <span style={{ fontWeight: 600, color: '#fff' }}>{text}</span>
+        </Space>
+      ),
     },
     {
       title: 'Email',
@@ -59,47 +63,62 @@ function Users() {
       ],
       onFilter: (value, record) => record.role === value,
       render: (role) => (
-         <Tag color={role === 'admin' ? 'gold' : 'blue'}>
-             {role.toUpperCase()}
-         </Tag>
+        <Tag color={role === 'admin' ? 'gold' : 'blue'}>
+          {(role || 'user').toUpperCase()}
+        </Tag>
       ),
     },
     {
       title: 'Joined Date',
       dataIndex: 'createdAt',
       sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-      render: (date) => <span style={{ color: '#aaa' }}>{getDateFormat(date)}</span>,
+      render: (date) => (
+        <span style={{ color: '#aaa' }}>{getDateFormat(date)}</span>
+      ),
     },
     {
-        title: 'Status',
-        dataIndex: 'isActive', // Assuming this field exists or we defaults
-        render: (isActive) => (
-            <Tag color={isActive !== false ? 'green' : 'red'}>
-                {isActive !== false ? 'Active' : 'Inactive'}
-            </Tag>
-        )
-    }
+      title: 'Status',
+      dataIndex: 'isActive', // Assuming this field exists or we defaults
+      render: (isActive) => (
+        <Tag color={isActive !== false ? 'green' : 'red'}>
+          {isActive !== false ? 'Active' : 'Inactive'}
+        </Tag>
+      ),
+    },
   ];
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <TeamOutlined style={{ fontSize: '24px', color: '#f5c518' }} />
-            <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Users</h1>
-         </div>
-      
-          <Space>
-             <Input 
-                placeholder="Search users..." 
-                prefix={<SearchOutlined style={{ color: '#888' }} />} 
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ width: 250, background: '#1f1f1f', border: 'none', color: '#fff' }}
-             />
-          </Space>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 20,
+          flexWrap: 'wrap',
+          gap: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <TeamOutlined style={{ fontSize: '24px', color: '#dfb582' }} />
+          <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Users</h1>
+        </div>
+
+        <Space wrap>
+          <Input aria-label="Search users"
+            prefix={<SearchOutlined style={{ color: '#888' }} />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{
+              width: 'min(250px, 65vw)',
+              background: '#1c1b22',
+              border: 'none',
+              color: '#fff',
+            }}
+          />
+        </Space>
       </div>
-      
+
       <Table
         dataSource={filteredUsers}
         columns={columns}

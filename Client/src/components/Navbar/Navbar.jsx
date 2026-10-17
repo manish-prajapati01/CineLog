@@ -1,361 +1,187 @@
-/**
- * Navbar Component (IMDb Clone)
- * Features: Yellow Logo, Mega Menu, Centered Search, User Actions
- */
-
-import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { setUser } from '../../redux/usersSlice';
-import { searchAPI } from '../../services';
-import './Navbar.css';
-
-const Navbar = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+import Logo from '../Logo';
+import { useEffect, useState, useRef } from 'react';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout, setUser } from '../../redux/usersSlice';
+import { fetchLibrary, clearLibrary } from '../../redux/librarySlice';
+import api from '../../services/api';
+export default function Navbar() {
+  const { user } = useSelector((s) => s.users);
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.users);
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [showResults, setShowResults] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const searchRef = useRef(null);
-
-  // Search Filters
-  const searchFilters = [
-    { key: 'multi', label: 'All' },
-    { key: 'movie', label: 'Movies' },
-    { key: 'tv', label: 'TV Shows' },
-    { key: 'person', label: 'Celebs' },
-  ];
-  const [searchCategory, setSearchCategory] = useState('multi');
-  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
-  const searchDropdownRef = useRef(null);
-
-  // Close menus on click outside
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const menuButton = useRef(null),
+    header = useRef(null);
+  const [mobile, setMobile] = useState(
+    () => window.matchMedia('(max-width: 1000px)').matches,
+  );
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowResults(false);
-      }
-      if (
-        searchDropdownRef.current &&
-        !searchDropdownRef.current.contains(e.target)
-      ) {
-        setSearchDropdownOpen(false);
-      }
+    const query = window.matchMedia('(max-width: 1000px)');
+    const update = () => {
+      setMobile(query.matches);
+      setOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
   }, []);
-
-  // Close mega menu when route changes
+  const location = useLocation();
+  const wasOpen = useRef(open);
+  wasOpen.current = open;
   useEffect(() => {
-    setMenuOpen(false);
-  }, [location]);
-
-  // Debounced search: Waits 300ms after user stops typing to fetch results
-  // This prevents making API calls for every single keystroke.
+    if (wasOpen.current) document.getElementById('main-content')?.focus({ preventScroll: true });
+    setOpen(false);
+  }, [location.pathname, location.search]);
   useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (searchQuery.trim().length >= 2) {
-        try {
-          const data = await searchAPI.multiSearch(searchQuery);
-          setSearchResults(data.results?.slice(0, 6) || []);
-          setShowResults(true);
-        } catch (error) {
-          console.error('Search error:', error);
+    if (!open || !mobile) return;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    function close(event) {
+      if (event.key === 'Tab') {
+        const controls = [
+          ...header.current.querySelectorAll(
+            'a[href],button:not([disabled]),input',
+          ),
+        ].filter((el) => el.getClientRects().length);
+        const first = controls[0],
+          last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
         }
-      } else {
-        setSearchResults([]);
-        setShowResults(false);
       }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    dispatch(setUser(null));
-    navigate('/login');
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(
-        `/search?q=${encodeURIComponent(searchQuery)}&type=${searchCategory}`,
-      );
-      setShowResults(false);
+      if (event.key === 'Escape') {
+        setOpen(false);
+        menuButton.current?.focus();
+      }
     }
-  };
-
+    function outside(event) {
+      if (!header.current?.contains(event.target)) setOpen(false);
+    }
+    document.addEventListener('keydown', close);
+    document.addEventListener('pointerdown', outside);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener('keydown', close);
+      document.removeEventListener('pointerdown', outside);
+    };
+  }, [open, mobile]);
+  useEffect(() => {
+    if (user?.id) dispatch(fetchLibrary());
+    else dispatch(clearLibrary());
+  }, [user?.id, dispatch]);
+  useEffect(() => {
+    if (localStorage.getItem('token'))
+      api
+        .get('/auth/me')
+        .then((r) => dispatch(setUser(r.data)))
+        .catch(() => {});
+  }, [dispatch]);
   return (
     <>
-      <nav className='navbar'>
-        <div className='navbar-container'>
-          {/* 1. Logo */}
-          <Link to='/' className='navbar-logo'>
-            CineLog
-          </Link>
-
-          {/* 2. Menu Button (Triggers Mega Menu) */}
-          <button
-            className={`menu-btn ${menuOpen ? 'active' : ''}`}
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            <div className='menu-icon'>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <span>Menu</span>
-          </button>
-
-          {/* 3. Search Bar */}
-          <div className='navbar-search' ref={searchRef}>
-            <form onSubmit={handleSearchSubmit}>
-              <div className='search-input-wrapper'>
-                <div
-                  className='search-category'
-                  ref={searchDropdownRef}
-                  onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
-                >
-                  {searchFilters.find((f) => f.key === searchCategory)?.label ||
-                    'All'}
-                  {searchDropdownOpen && (
-                    <div className='search-category-dropdown'>
-                      {searchFilters.map((filter) => (
-                        <div
-                          key={filter.key}
-                          className={`search-category-item ${searchCategory === filter.key ? 'active' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSearchCategory(filter.key);
-                            setSearchDropdownOpen(false);
-                          }}
-                        >
-                          {filter.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <input
-                  type='text'
-                  placeholder='Search IMDb'
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() =>
-                    searchResults.length > 0 && setShowResults(true)
-                  }
-                />
-                <button type='submit' className='search-btn'>
-                  <svg viewBox='0 0 24 24' fill='currentColor'>
-                    <path d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z' />
-                  </svg>
-                </button>
-              </div>
-            </form>
-
-            {/* Search Results Dropdown */}
-            {showResults && searchResults.length > 0 && (
-              <div className='search-results'>
-                {searchResults.map((item) => (
-                  <div
-                    key={`${item.mediaType}-${item.id}`}
-                    className='search-result-item'
-                    onClick={() => {
-                      setShowResults(false);
-                      setSearchQuery('');
-                      navigate(
-                        item.mediaType === 'person'
-                          ? `/person/${item.id}`
-                          : `/${item.mediaType}/${item.id}`,
-                      );
-                    }}
-                  >
-                    <img
-                      src={
-                        item.posterPath
-                          ? `https://image.tmdb.org/t/p/w92${item.posterPath}`
-                          : item.profilePath
-                            ? `https://image.tmdb.org/t/p/w92${item.profilePath}`
-                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.title || item.name || '?')}&background=1a1a2e&color=f5c518&size=92`
-                      }
-                      alt=''
-                      className='result-poster'
-                    />
-                    <div className='result-info'>
-                      <span className='result-title'>
-                        {item.title || item.name}
-                      </span>
-                      <span className='result-meta'>
-                        {item.mediaType === 'movie'
-                          ? 'Movie'
-                          : item.mediaType === 'tv'
-                            ? 'TV Series'
-                            : 'Person'}
-                        {item.releaseDate
-                          ? ` • ${item.releaseDate.split('-')[0]}`
-                          : ''}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 4. Right Actions */}
-          <div className='navbar-actions'>
-            <div className='separator'></div>
-
-            <Link to='/watchlist' className='nav-link-btn'>
-              <svg
-                width='24'
-                height='24'
-                viewBox='0 0 24 24'
-                fill='currentColor'
-                style={{ marginRight: '-4px' }}
-              >
-                <path d='M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z' />
-              </svg>
-              <span>Watchlist</span>
-            </Link>
-
-            {user ? (
-              <div className='user-menu'>
-                <button className='user-menu-trigger'>
-                  <div className='user-avatar-small'>
-                    {user.avatar ? (
-                      <img src={user.avatar} alt='User' />
-                    ) : (
-                      user.name?.[0]
-                    )}
-                  </div>
-                  <span>{user.name?.split(' ')[0]}</span>
-                  <span style={{ fontSize: '0.7em' }}>▼</span>
-                </button>
-                <div className='user-dropdown-content'>
-                  {user.role === 'admin' && (
-                    <Link to='/admin' className='dropdown-item'>
-                      Admin Dashboard
-                    </Link>
-                  )}
-                  <Link to='/profile' className='dropdown-item'>
-                    Your Profile
-                  </Link>
-                  <Link to='/watchlist' className='dropdown-item'>
-                    Your Watchlist
-                  </Link>
-                  <button onClick={handleLogout} className='dropdown-item'>
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <Link to='/login' className='nav-link-btn'>
-                Sign In
-              </Link>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* Mega Menu Overlay */}
       <div
-        className={`mega-menu-overlay ${menuOpen ? 'open' : ''}`}
-        onClick={() => setMenuOpen(false)}
-      >
-        <div className='mega-menu-content' onClick={(e) => e.stopPropagation()}>
-          <div className='mega-menu-grid'>
-            <div className='menu-column'>
-              <h3>🎬 Movies</h3>
-              <ul>
-                <li>
-                  <Link to='/movies?filter=popular&region=hollywood'>
-                    Popular Movies
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/movies?filter=now_playing&region=hollywood'>
-                    Now Playing
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/movies?filter=upcoming&region=hollywood'>
-                    Upcoming Releases
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/movies?filter=top_rated&region=hollywood'>
-                    Top Rated
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/movies?region=indian'>Indian Movies</Link>
-                </li>
-              </ul>
+        className={`cl-menu-scrim ${open && mobile ? 'is-open' : ''}`}
+        aria-hidden='true'
+        onClick={() => setOpen(false)}
+      />
+      <header ref={header} className={`cl-nav ${open ? 'menu-open' : ''}`}>
+        <Logo />
+        <button
+          ref={menuButton}
+          className='cl-menu-toggle'
+          aria-expanded={open}
+          aria-controls='primary-menu'
+          onClick={() => setOpen(!open)}
+          aria-label={open ? 'Close navigation menu' : 'Open navigation menu'}
+        >
+          <span className='cl-menu-icon' aria-hidden='true'>
+            <i />
+            <i />
+          </span>
+          <span>{open ? 'Close' : 'Menu'}</span>
+        </button>
+        <div
+          id='primary-menu'
+          aria-hidden={mobile && !open ? true : undefined}
+          className={`cl-nav-content ${open ? 'is-open' : ''}`}
+        >
+          <p className='cl-menu-heading'>EXPLORE CINELOG</p>
+          <nav aria-label='Main navigation'>
+            <NavLink to='/' end>
+              Discover
+              <span className='cl-nav-arrow' aria-hidden='true'>
+                ↗
+              </span>
+            </NavLink>
+            <NavLink to='/movies'>
+              Movies
+              <span className='cl-nav-arrow' aria-hidden='true'>
+                ↗
+              </span>
+            </NavLink>
+            <NavLink to='/tv'>
+              Series
+              <span className='cl-nav-arrow' aria-hidden='true'>
+                ↗
+              </span>
+            </NavLink>
+            <NavLink to='/watchlist'>
+              My library
+              <span className='cl-nav-arrow' aria-hidden='true'>
+                ↗
+              </span>
+            </NavLink>
+          </nav>
+          <form
+            className='cl-search'
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (query.trim())
+                navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+            }}
+          >
+            <span aria-hidden='true'>⌕</span>
+            <input
+              aria-label='Search films, series and people'
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button type='submit' aria-label='Search'>
+              Search
+            </button>
+          </form>
+          {user ? (
+            <div className='cl-account'>
+              <Link
+                to='/profile'
+                className='cl-avatar'
+                title='Your profile'
+                aria-label='Your profile'
+              >
+                {user.name?.slice(0, 1)}
+              </Link>
+              {user.role === 'admin' && <Link to='/admin'>Admin</Link>}
+              <button
+                className='cl-quiet'
+                onClick={() => {
+                  dispatch(logout());
+                  dispatch(clearLibrary());
+                  navigate('/');
+                }}
+              >
+                Sign out
+              </button>
             </div>
-
-            <div className='menu-column'>
-              <h3>📺 TV Shows</h3>
-              <ul>
-                <li>
-                  <Link to='/tv?filter=popular&region=hollywood'>
-                    Popular TV Shows
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/tv?filter=airing_today&region=hollywood'>
-                    Airing Today
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/tv?filter=upcoming&region=hollywood'>
-                    Upcoming TV Shows
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/tv?filter=top_rated&region=hollywood'>
-                    Top Rated TV Shows
-                  </Link>
-                </li>
-                <li>
-                  <Link to='/tv?region=indian'>Indian TV Shows</Link>
-                </li>
-              </ul>
-            </div>
-
-            <div className='menu-column'>
-              <h3>🎭 Genres</h3>
-              <ul>
-                <li>
-                  <Link to='/movies?genre=28&region=hollywood'>Action</Link>
-                </li>
-                <li>
-                  <Link to='/movies?genre=35&region=hollywood'>Comedy</Link>
-                </li>
-                <li>
-                  <Link to='/movies?genre=18&region=hollywood'>Drama</Link>
-                </li>
-                <li>
-                  <Link to='/movies?genre=27&region=hollywood'>Horror</Link>
-                </li>
-                <li>
-                  <Link to='/movies?genre=10749&region=hollywood'>Romance</Link>
-                </li>
-              </ul>
-            </div>
-          </div>
+          ) : (
+            <Link className='cl-button small' to='/login'>
+              Sign in <span>↗</span>
+            </Link>
+          )}
         </div>
-      </div>
+      </header>
     </>
   );
-};
-
-export default Navbar;
+}

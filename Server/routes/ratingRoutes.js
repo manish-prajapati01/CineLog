@@ -31,7 +31,7 @@ router.post("/", protect, async (req, res) => {
     const { tmdbId, mediaType, score, title, posterPath } = req.body;
 
     // Validate score
-    if (score < 1 || score > 10) {
+    if (!Number.isInteger(score) || score < 1 || score > 10 || !Number.isSafeInteger(Number(tmdbId)) || Number(tmdbId) < 1 || !["movie", "tv"].includes(mediaType) || typeof title !== "string" || !title.trim()) {
       return res
         .status(400)
         .json({ success: false, message: "Score must be between 1 and 10" });
@@ -45,8 +45,10 @@ router.post("/", protect, async (req, res) => {
     );
 
     // Create/update movie reference for analytics
-    await Movie.getOrCreate(tmdbId, mediaType, title, posterPath);
-    await Movie.updateStats(tmdbId, mediaType);
+    try {
+      await Movie.getOrCreate(Number(tmdbId), mediaType, title, posterPath);
+      await Movie.updateStats(Number(tmdbId), mediaType);
+    } catch (error) { console.error('Rating analytics refresh failed:', error.message); }
 
     res.json({
       success: true,
@@ -112,7 +114,7 @@ router.delete("/:tmdbId/:mediaType", protect, async (req, res) => {
     });
 
     // Update movie stats
-    await Movie.updateStats(parseInt(tmdbId), mediaType);
+    await Movie.updateStats(parseInt(tmdbId), mediaType).catch(error => console.error("Rating analytics refresh failed:", error.message));
 
     res.json({ success: true, message: "Rating removed" });
   } catch (error) {

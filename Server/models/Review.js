@@ -69,6 +69,7 @@ const reviewSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    autoIndex: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
@@ -78,6 +79,9 @@ const reviewSchema = new mongoose.Schema(
 reviewSchema.virtual("likeCount").get(function () {
   return this.likes?.length || 0;
 });
+
+// Apply the unique identity index through scripts/migrateMediaReferences.js.
+reviewSchema.index({ userId: 1, tmdbId: 1, mediaType: 1 }, { unique: true });
 
 // Indexes
 reviewSchema.index({ tmdbId: 1, mediaType: 1 });

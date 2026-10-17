@@ -1,201 +1,150 @@
-/**
- * Search - Search results page
- */
-import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { MovieCard, MovieGridSkeleton } from '../../components';
-import searchService from '../../services/searchService';
-import './Search.css';
-
-const Search = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const query = searchParams.get('q') || '';
-  const type = searchParams.get('type') || 'multi';
-
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalResults, setTotalResults] = useState(0);
-
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import MovieCard from '../../components/MovieCard/MovieCard';
+import api from '../../services/api';
+export default function Search() {
+  const [params, setParams] = useSearchParams(),
+    q = params.get('q') || '',
+    type = ['movie', 'tv', 'person'].includes(params.get('type'))
+      ? params.get('type')
+      : 'multi',
+    page = Math.min(
+      500,
+      Math.max(1, Math.floor(Number(params.get('page'))) || 1),
+    );
+  const [data, setData] = useState({
+      results: [],
+      total_pages: 0,
+      total_results: 0,
+    }),
+    [loading, setLoading] = useState(false),
+    [error, setError] = useState(''),
+    [draft, setDraft] = useState(q),
+    [retry, setRetry] = useState(0);
+  useEffect(() => setDraft(q), [q]);
   useEffect(() => {
-    if (!query) return;
-
-    const search = async () => {
-      setLoading(true);
-      try {
-        let response;
-        switch (type) {
-          case 'movie':
-            response = await searchService.searchMovies(query, page);
-            break;
-          case 'tv':
-            response = await searchService.searchTV(query, page);
-            break;
-          case 'person':
-            response = await searchService.searchPeople(query, page);
-            break;
-          default:
-            response = await searchService.searchMulti(query, page);
-        }
-        // Handle both response.data and direct response formats
-        const data = response.data || response;
-        setResults(data.results || []);
-        setTotalPages(data.total_pages || 0);
-        setTotalResults(data.total_results || 0);
-      } catch (error) {
-        console.error('Search error:', error);
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    search();
-  }, [query, type, page]);
-
-  const handleTypeChange = (newType) => {
-    setSearchParams({ q: query, type: newType });
-    setPage(1);
-  };
-
-  const filterButtons = [
-    { key: 'multi', label: 'All' },
-    { key: 'movie', label: 'Movies' },
-    { key: 'tv', label: 'TV Shows' },
-    { key: 'person', label: 'People' },
-  ];
-
+    const controller = new AbortController();
+    setError('');
+    if (!q.trim()) {
+      setLoading(false);
+      setData({ results: [], total_pages: 0, total_results: 0 });
+      return;
+    }
+    setLoading(true);
+    api
+      .get(
+        `/search/${['movie', 'tv', 'person'].includes(type) ? type : 'multi'}`,
+        { params: { q, page }, signal: controller.signal },
+      )
+      .then((r) => {
+        if (!controller.signal.aborted) setData(r.data || r);
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted) setError(e.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [q, type, page, retry]);
   return (
-    <div className='search-container'>
-      <div className='search-page'>
-        <div className='search-header'>
-          <h1>Search Results</h1>
-          {query && <p className='search-query'>for &quot;{query}&quot;</p>}
-          {totalResults > 0 && (
-            <span className='result-count'>{totalResults} results found</span>
-          )}
-        </div>
-
-        {/* Filter Tabs */}
-        <div className='search-filters'>
-          {filterButtons.map((btn) => (
-            <button
-              key={btn.key}
-              className={`filter-btn ${type === btn.key ? 'active' : ''}`}
-              onClick={() => handleTypeChange(btn.key)}
-            >
-              {btn.label}
-            </button>
-          ))}
-        </div>
+    <div className='cl-page cl-top-space'>
+      <p className='cl-eyebrow'>THE CATALOGUE</p>
+      <h1>Search CineLog</h1>
+      <form
+        className='cl-search-page-form'
+        onSubmit={(e) => {
+          e.preventDefault();
+          setParams({ q: draft.trim(), type });
+        }}
+      >
+        <label className='cl-sr-only' htmlFor='catalogue-search'>
+          Search films, series and people
+        </label>
+        <input
+          id='catalogue-search'
+          autoFocus
+          aria-label='Search query'
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+        />
+        <button className='cl-button'>Search ↗</button>
+      </form>
+      <div className='cl-tabs'>
+        {[
+          ['multi', 'Everything'],
+          ['movie', 'Films'],
+          ['tv', 'Series'],
+          ['person', 'People'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            aria-pressed={key === type}
+            className={key === type ? 'active' : ''}
+            onClick={() => setParams({ q, type: key })}
+          >
+            {label}
+          </button>
+        ))}
       </div>
-
-      {/* Results */}
-      <div className='search-results'>
-        {loading ? (
-          <MovieGridSkeleton count={12} />
-        ) : results.length > 0 ? (
-          <>
-            <div className='results-grid'>
-              {results.map((item, index) => {
-                // Handle person results differently
-                if (item.media_type === 'person' || type === 'person') {
-                  return (
-                    <Link
-                      key={item.id}
-                      to={`/person/${item.id}`}
-                      className='person-result'
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <img
-                        src={
-                          item.profile_path
-                            ? `https://image.tmdb.org/t/p/w185${item.profile_path}`
-                            : '/placeholder-person.jpg'
-                        }
-                        alt={item.name}
-                      />
-                      <div className='person-info'>
-                        <strong>{item.name}</strong>
-                        <span>{item.known_for_department}</span>
-                      </div>
-                    </Link>
-                  );
-                }
-                return (
-                  <MovieCard
-                    key={item.id}
-                    movie={item}
-                    index={index}
-                    mediaType={item.media_type || type}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className='pagination'>
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className='pagination-btn'
-                >
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    width='20'
-                    height='20'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeWidth='2'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                  >
-                    <path d='M15 18l-6-6 6-6' />
-                  </svg>
-                  Previous
-                </button>
-                <span className='pagination-info'>
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className='pagination-btn'
-                >
-                  Next
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    width='20'
-                    height='20'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeWidth='2'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                  >
-                    <path d='M9 18l6-6-6-6' />
-                  </svg>
-                </button>
-              </div>
-            )}
-          </>
-        ) : query ? (
-          <div className='no-results'>
-            <h2>No results found</h2>
-            <p>Try different keywords or check the spelling</p>
-          </div>
-        ) : (
-          <div className='no-query'>
-            <h2>Search for movies, TV shows, and people</h2>
-            <p>Use the search bar above to find what you&apos;re looking for</p>
-          </div>
-        )}
+      <div className='cl-results-label'>
+        <span>{q ? `Results for “${q}”` : 'Something in mind?'}</span>
+        <span>{data.total_results || 0} results</span>
       </div>
+      {error ? (
+        <div className='cl-empty' role='alert'>
+          <p>{error}</p>
+          <button onClick={() => setRetry((x) => x + 1)}>Try again</button>
+        </div>
+      ) : (
+        <div className='cl-grid'>
+          {loading
+            ? Array.from({ length: 12 }, (_, i) => (
+                <div key={i} className='cl-skeleton' />
+              ))
+            : data.results.map((item) => (
+                <MovieCard
+                  key={`${item.media_type || type}-${item.id}`}
+                  item={item}
+                  mediaType={
+                    item.media_type ||
+                    (type === 'multi' ? (item.title ? 'movie' : 'tv') : type)
+                  }
+                />
+              ))}
+        </div>
+      )}
+      {!loading && !error && !data.results.length && (
+        <div className='cl-empty'>
+          <h2>
+            {q ? 'No matches this time.' : 'Find a film, series or filmmaker.'}
+          </h2>
+          <p>
+            {q
+              ? 'Try a different title or spelling.'
+              : 'Search for movies, series and the people who make them.'}
+          </p>
+        </div>
+      )}
+      {!error && data.total_pages > 1 && (
+        <div className='cl-pagination'>
+          <button
+            disabled={page === 1 || loading}
+            onClick={() => setParams({ q, type, page: page - 1 })}
+          >
+            ← Previous
+          </button>
+          <span>
+            {page} / {Math.min(data.total_pages, 500)}
+          </span>
+          <button
+            disabled={page >= Math.min(data.total_pages, 500) || loading}
+            onClick={() => setParams({ q, type, page: page + 1 })}
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   );
-};
-
-export default Search;
+}

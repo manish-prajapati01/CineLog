@@ -15,8 +15,9 @@ const createAdmin = async () => {
       await mongoose.connect(process.env.MONGO_URI);
     }
 
-    const email = "admin@example.com";
-    const password = "admin123";
+    const email = process.env.ADMIN_EMAIL;
+    const password = process.env.ADMIN_PASSWORD;
+    if (!email || !password || password.length < 12) throw new Error("Set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters)");
     const name = "CineLog Admin";
 
     // Check if admin exists
@@ -43,7 +44,7 @@ const createAdmin = async () => {
     ✅ Admin User Configured Successfully!
     -------------------------------------------
     Email:    ${email}
-    Password: ${password}
+    Password: [not displayed]
     Role:     ${admin.role}
     -------------------------------------------
     You can now log in to the CineLog Admin Panel.

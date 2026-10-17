@@ -1,120 +1,47 @@
-/**
- * Watchlist Routes
- * Handle user watchlist operations
- */
-
-const express = require("express");
-const router = express.Router();
-const Watchlist = require("../models/Watchlist");
-const { protect } = require("../middlewares/auth");
-
-/**
- * @route   GET /api/watchlist
- * @desc    Get user's watchlist
- * @access  Private
- */
-router.get("/", protect, async (req, res) => {
-  try {
-    let watchlist = await Watchlist.findOne({ userId: req.userId });
-
-    if (!watchlist) {
-      watchlist = await Watchlist.create({ userId: req.userId, items: [] });
-    }
-
-    res.json({
-      success: true,
-      data: watchlist.items,
-      count: watchlist.items.length,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+const router = require('express').Router();
+const Watchlist = require('../models/Watchlist');
+const { protect } = require('../middlewares/auth');
+router.use(protect);
+const valid = (id, type) => Number.isSafeInteger(Number(id)) && Number(id) > 0 && ['movie', 'tv'].includes(type);
+router.get('/', async (req, res, next) => {
+  try { const list = await Watchlist.findOne({ userId: req.userId }); res.json({ success: true, data: list?.items || [] }); } catch (e) { next(e); }
 });
-
-/**
- * @route   POST /api/watchlist
- * @desc    Add item to watchlist
- * @access  Private
- */
-router.post("/", protect, async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const { tmdbId, mediaType, title, posterPath } = req.body;
-
-    let watchlist = await Watchlist.findOne({ userId: req.userId });
-
-    if (!watchlist) {
-      watchlist = new Watchlist({ userId: req.userId, items: [] });
-    }
-
-    if (watchlist.hasItem(tmdbId, mediaType)) {
-      return res.status(400).json({
-        success: false,
-        message: "Already in watchlist",
-      });
-    }
-
-    watchlist.addItem({ tmdbId, mediaType, title, posterPath });
-    await watchlist.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Added to watchlist",
-      data: watchlist.items,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+    if (!valid(tmdbId, mediaType) || typeof title !== 'string' || !title.trim() || title.length > 300) return res.status(400).json({ message: 'A valid title and media type are required' });
+    try { await Watchlist.updateOne({ userId: req.userId }, { $setOnInsert: { items: [] } }, { upsert: true }); } catch (e) { if (e.code !== 11000) throw e; }
+    const list = await Watchlist.findOneAndUpdate({ userId: req.userId, items: { $not: { $elemMatch: { tmdbId: Number(tmdbId), mediaType } } } }, { $push: { items: { tmdbId: Number(tmdbId), mediaType, title: title.trim(), posterPath, status: 'planned' } } }, { new: true, runValidators: true });
+    if (!list) return res.status(409).json({ message: 'Already in your library' });
+    res.status(201).json({ success: true, data: list.items });
+  } catch (e) { next(e); }
 });
-
-/**
- * @route   DELETE /api/watchlist/:tmdbId/:mediaType
- * @desc    Remove item from watchlist
- * @access  Private
- */
-router.delete("/:tmdbId/:mediaType", protect, async (req, res) => {
+router.patch('/:tmdbId/:mediaType', async (req, res, next) => {
   try {
     const { tmdbId, mediaType } = req.params;
-
-    const watchlist = await Watchlist.findOne({ userId: req.userId });
-
-    if (!watchlist) {
-      return res.status(404).json({
-        success: false,
-        message: "Watchlist not found",
-      });
+    if (!valid(tmdbId, mediaType)) return res.status(400).json({ message: 'Invalid title' });
+    const update = {};
+    for (const field of ['status', 'collectionName', 'notes']) if (req.body[field] !== undefined) update[`items.$.${field}`] = req.body[field];
+    if (req.body.status) update['items.$.watchedAt'] = req.body.status === 'watched' ? new Date() : null;
+    if (req.body.watchedAt !== undefined) {
+      const date = new Date(req.body.watchedAt);
+      if (Number.isNaN(date.getTime()) || date > new Date()) return res.status(400).json({ message: 'Choose a valid past viewing date' });
+      update['items.$.watchedAt'] = date;
+      update['items.$.status'] = 'watched';
     }
-
-    watchlist.removeItem(parseInt(tmdbId), mediaType);
-    await watchlist.save();
-
-    res.json({
-      success: true,
-      message: "Removed from watchlist",
-      data: watchlist.items,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+    const list = await Watchlist.findOneAndUpdate({ userId: req.userId, items: { $elemMatch: { tmdbId: Number(tmdbId), mediaType } } }, { $set: update }, { new: true, runValidators: true });
+    if (!list) return res.status(404).json({ message: 'Title not in your library' });
+    res.json({ success: true, data: list.items });
+  } catch (e) { if (e.name === 'ValidationError') e.status = 400; next(e); }
 });
-
-/**
- * @route   GET /api/watchlist/check/:tmdbId/:mediaType
- * @desc    Check if item is in watchlist
- * @access  Private
- */
-router.get("/check/:tmdbId/:mediaType", protect, async (req, res) => {
+router.delete('/:tmdbId/:mediaType', async (req, res, next) => {
   try {
-    const { tmdbId, mediaType } = req.params;
-
-    const watchlist = await Watchlist.findOne({ userId: req.userId });
-
-    res.json({
-      success: true,
-      inWatchlist: watchlist?.hasItem(parseInt(tmdbId), mediaType) || false,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+    if (!valid(req.params.tmdbId, req.params.mediaType)) return res.status(400).json({ message: 'Invalid title' });
+    const list = await Watchlist.findOneAndUpdate({ userId: req.userId }, { $pull: { items: { tmdbId: Number(req.params.tmdbId), mediaType: req.params.mediaType } } }, { new: true });
+    res.json({ success: true, data: list?.items || [] });
+  } catch (e) { next(e); }
 });
-
+router.get('/check/:tmdbId/:mediaType', async (req, res, next) => {
+  try { const list = await Watchlist.findOne({ userId: req.userId }); res.json({ success: true, inWatchlist: list?.hasItem(Number(req.params.tmdbId), req.params.mediaType) || false }); } catch (e) { next(e); }
+});
 module.exports = router;

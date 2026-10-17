@@ -1,194 +1,111 @@
-/**
- * MovieCard Component
- * Displays movie/TV show poster with hover effects
- * Handles both camelCase and snake_case data from TMDB
- */
-
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
+import { useState } from 'react';
 import api from '../../services/api';
-import './MovieCard.css';
-
-/**
- * MovieCard Component
- * Reusable card component for Movies, TV Shows, and People.
- * Handles automatic fallback for missing posters and intelligent Watchlist state.
- */
-const MovieCard = ({
+import { setLibrary } from '../../redux/librarySlice';
+export default function MovieCard({
   movie,
   item,
+  mediaType: suppliedType,
   showRating = true,
-  size = 'medium',
-  mediaType: propMediaType,
-  index = 0,
-}) => {
-  const navigate = useNavigate();
-  // Support both 'movie' and 'item' props
+}) {
   const data = movie || item;
-  const { user } = useSelector((state) => state.users);
-
-  const [inWatchlist, setInWatchlist] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const id = data?.id;
-  const title = data?.title || data?.name || 'Untitled';
-  const voteAverage = data?.voteAverage || data?.vote_average || 0;
-
-  const mediaType =
-    propMediaType ||
-    data?.mediaType ||
-    data?.media_type ||
-    (data?.name ? 'tv' : 'movie');
-
-  // Ensure person types are caught if passed without mediaType prop
-  const finalMediaType =
-    data?.gender !== undefined || data?.profile_path ? 'person' : mediaType;
-
-  // Now we can safely use finalMediaType/mediaType
-  const posterPath =
-    finalMediaType === 'person'
-      ? data?.profile_path || data?.profilePath
-      : data?.posterPath || data?.poster_path;
-
-  useEffect(() => {
-    if (!user || !id || finalMediaType === 'person') return;
-    let cancelled = false;
-    const checkWatchlist = async () => {
-      try {
-        const res = await api.get(`/watchlist/check/${id}/${finalMediaType}`);
-        if (!cancelled) {
-          setInWatchlist(res?.inWatchlist || res?.data?.inWatchlist || false);
-        }
-      } catch {
-        // silent fail
-      }
-    };
-    checkWatchlist();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, finalMediaType, user?.id]);
-
+  const user = useSelector((s) => s.users.user);
+  const items = useSelector((s) => s.library.items);
+  const dispatch = useDispatch(),
+    navigate = useNavigate();
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [message, setMessage] = useState(''),
+    [imageFailed, setImageFailed] = useState(false);
   if (!data) return null;
-
-  const linkPath =
-    finalMediaType === 'person' ? `/person/${id}` : `/${finalMediaType}/${id}`;
-
-  const imageUrl = posterPath
-    ? posterPath.startsWith('http')
-      ? posterPath
-      : `https://image.tmdb.org/t/p/w342${posterPath}`
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=random&size=342`; // Better fallback
-
-  const handleWatchlistClick = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    if (loading) return;
-    setLoading(true);
-
+  const type = suppliedType || data.media_type || (data.name ? 'tv' : 'movie');
+  const title = data.title || data.name;
+  const poster = data.poster_path || data.posterPath || data.profile_path;
+  const saved = items.some((i) => i.tmdbId === data.id && i.mediaType === type);
+  const rating = Number(data.vote_average || data.voteAverage || 0);
+  async function toggle() {
+    if (!user) return navigate('/login');
+    setBusy(true);
+    setError('');
+    setMessage('');
     try {
-      if (inWatchlist) {
-        await api.delete(`/watchlist/${id}/${finalMediaType}`);
-        setInWatchlist(false);
-      } else {
-        await api.post('/watchlist', {
-          tmdbId: parseInt(id),
-          mediaType: finalMediaType,
-          title,
-          posterPath,
-        });
-        setInWatchlist(true);
-      }
-    } catch (error) {
-      console.error('Watchlist error', error);
+      const result = saved
+        ? await api.delete(`/watchlist/${data.id}/${type}`)
+        : await api.post('/watchlist', {
+            tmdbId: data.id,
+            mediaType: type,
+            title,
+            posterPath: poster,
+          });
+      dispatch(setLibrary(result.data));
+      setMessage(saved ? 'Removed from library' : 'Saved to library');
+    } catch (e) {
+      setError(e.message);
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
-  };
-
-  if (mediaType === 'person') {
-    // simplified card for persons if needed
   }
-
   return (
-    <div className={`movie-card ${size}`} style={{ '--index': index }}>
-      <Link
-        to={linkPath}
-        className='card-link-wrapper'
-        style={{ display: 'contents' }}
-      >
-        {/* Poster Section */}
-        <div className='card-poster'>
-          {/* Ribbon Button for Watchlist (Not for People) */}
-          {finalMediaType !== 'person' && (
-            <button
-              className={`card-watchlist-btn ${inWatchlist ? 'added' : ''}`}
-              onClick={handleWatchlistClick}
-              title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
-            >
-              {loading ? '...' : inWatchlist ? '✓' : '+'}
-            </button>
+    <article className='cl-card'>
+      <div className='cl-poster'>
+        <Link to={`/${type}/${data.id}`} tabIndex={-1} aria-hidden='true'>
+          {poster && !imageFailed ? (
+            <img
+              src={
+                poster.startsWith('http')
+                  ? poster
+                  : `https://image.tmdb.org/t/p/${type === 'person' ? 'w185' : 'w342'}${poster}`
+              }
+              alt=''
+              loading='lazy'
+              decoding='async'
+              width='342'
+              height='513'
+              srcSet={
+                type !== 'person' && !poster.startsWith('http')
+                  ? `https://image.tmdb.org/t/p/w185${poster} 185w, https://image.tmdb.org/t/p/w342${poster} 342w`
+                  : undefined
+              }
+              sizes='(max-width: 600px) 45vw, (max-width: 1100px) 25vw, 210px'
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <span className='cl-no-poster'>{title}</span>
           )}
-
-          <img src={imageUrl} alt={title} loading='lazy' />
-        </div>
-
-        {/* Content Section */}
-        <div className='card-info'>
-          {/* Rating */}
-          {showRating && finalMediaType !== 'person' && (
-            <div className='card-rating-row'>
-              <span className='rating-star'>⭐</span>
-              <span className='rating-value'>
-                {voteAverage ? Number(voteAverage).toFixed(1) : 'NR'}
-              </span>
-            </div>
-          )}
-
-          {/* Title */}
-          <h3 className='card-title'>{title}</h3>
-
-          {/* Actions */}
-          {finalMediaType !== 'person' && (
-            <div className='card-actions'>
-              <button
-                className={`watchlist-btn-text ${inWatchlist ? 'added-text' : ''}`}
-                onClick={handleWatchlistClick}
-              >
-                {inWatchlist ? '✓ In Watchlist' : '+ Watchlist'}
-              </button>
-              <button
-                className='trailer-btn'
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  navigate(`/${finalMediaType}/${id}`);
-                }}
-              >
-                <span>Details ›</span>
-              </button>
-            </div>
-          )}
-        </div>
+        </Link>
+        {type !== 'person' && (
+          <button
+            disabled={busy}
+            className={`cl-save ${saved ? 'saved' : ''}`}
+            onClick={toggle}
+            aria-label={`${saved ? 'Remove' : 'Save'} ${title}`}
+            aria-pressed={saved}
+          >
+            {busy ? '...' : saved ? '✓' : '+'}
+          </button>
+        )}
+      </div>
+      <div className='cl-card-meta'>
+        <span>
+          {(data.release_date || data.first_air_date || '').slice(0, 4) ||
+            (type === 'person' ? 'Talent' : type === 'tv' ? 'Series' : 'Film')}
+        </span>
+        {showRating && type !== 'person' && rating > 0 && (
+          <span className='cl-score'>★ {rating.toFixed(1)}</span>
+        )}
+      </div>
+      <Link className='cl-card-title' to={`/${type}/${data.id}`}>
+        {title}
       </Link>
-    </div>
+      <span className='cl-sr-only' role='status'>
+        {message}
+      </span>
+      {error && (
+        <p role='alert' className='cl-error'>
+          {error}
+        </p>
+      )}
+    </article>
   );
-};
-
-MovieCard.propTypes = {
-  movie: PropTypes.object,
-  item: PropTypes.object,
-  showRating: PropTypes.bool,
-  size: PropTypes.string,
-  mediaType: PropTypes.string,
-  index: PropTypes.number,
-};
-
-export default MovieCard;
+}

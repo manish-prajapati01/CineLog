@@ -9,9 +9,9 @@ import axios from 'axios';
 // Uses environment variable for production, falls back to /api for local dev
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL
-    ? `${import.meta.env.VITE_API_URL}/api`
+    ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
     : '/api',
-  timeout: 15000,
+  timeout: 45000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -34,10 +34,18 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const message =
-      error.response?.data?.message || error.message || 'Something went wrong';
+      error.response?.data?.message ||
+      (error.code === 'ECONNABORTED'
+        ? 'This is taking longer than expected. Please try again.'
+        : !error.response
+          ? 'Unable to connect. Check your connection and try again.'
+          : 'We could not complete this request. Please try again.');
 
     // Handle 401 - Unauthorized
-    if (error.response?.status === 401) {
+    if (
+      error.response?.status === 401 &&
+      !/\/auth\/(login|register)$/.test(error.config?.url || '')
+    ) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       // Redirect to login if not already there

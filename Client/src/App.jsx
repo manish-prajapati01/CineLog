@@ -1,6 +1,6 @@
 /**
  * App - Main Application Component
- * CineLog Complete Redesign
+ * CineLog application
  */
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -8,11 +8,16 @@ import { useSelector } from 'react-redux';
 import React, { Suspense } from 'react';
 
 // Styles
-import './styles/design-system.css';
+
 import './index.css';
+import './styles/brand.css';
 
 // Components
-import { Navbar, Footer, Spinner } from './components';
+import Navbar from './components/Navbar/Navbar';
+import Footer from './components/Footer/Footer';
+import Spinner from './components/Spinner';
+import PageMeta from './components/PageMeta';
+import NotFound from './pages/NotFound';
 
 // Lazy load pages for code splitting
 const Home = React.lazy(() => import('./pages/Home'));
@@ -44,21 +49,14 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div
-          style={{
-            padding: '50px',
-            color: '#fff',
-            background: '#0d253f',
-            minHeight: '100vh',
-          }}
-        >
-          <h1>Something went wrong</h1>
-          <p style={{ color: '#f55' }}>{this.state.error?.message}</p>
+        <div className='cl-page cl-empty' role='alert'>
+          <h1>A pause in the story.</h1>
+          <p>Something went wrong while loading this page. Please try again.</p>
           <button
+            className='cl-button'
             onClick={() => window.location.reload()}
-            style={{ marginTop: '20px', padding: '10px 20px' }}
           >
-            Reload Page
+            Reload page
           </button>
         </div>
       );
@@ -71,7 +69,7 @@ class ErrorBoundary extends React.Component {
 const Layout = ({ children }) => (
   <div className='app-layout'>
     <Navbar />
-    <main className='main-content'>
+    <main id='main-content' className='main-content' tabIndex={-1}>
       <Suspense fallback={<PageLoader />}>{children}</Suspense>
     </main>
     <Footer />
@@ -80,9 +78,9 @@ const Layout = ({ children }) => (
 
 // Auth layout (no navbar)
 const AuthLayout = ({ children }) => (
-  <div className='auth-layout'>
+  <main id='main-content' className='auth-layout' tabIndex={-1}>
     <Suspense fallback={<PageLoader />}>{children}</Suspense>
-  </div>
+  </main>
 );
 
 function App() {
@@ -95,6 +93,10 @@ function App() {
 
       {/* Main Application Router */}
       <BrowserRouter>
+        <PageMeta />
+        <a href='#main-content' className='cl-skip-link'>
+          Skip to content
+        </a>
         <Routes>
           {/* Public Routes with Navbar */}
           {/* We wrap these pages with <Layout> so they have the Navbar and Footer */}
@@ -196,15 +198,7 @@ function App() {
             path='*'
             element={
               <Layout>
-                <div style={{ padding: '100px 20px', textAlign: 'center' }}>
-                  <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>
-                    404
-                  </h1>
-                  <p>Page not found</p>
-                  <a href='/' style={{ color: '#01b4e4' }}>
-                    Go Home
-                  </a>
-                </div>
+                <NotFound />
               </Layout>
             }
           />

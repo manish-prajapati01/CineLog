@@ -1,3 +1,4 @@
+import useDialog from '../../hooks/useDialog';
 /**
  * VideoModal Component
  * Renders a YouTube video in a modal overlay using React Portals.
@@ -7,14 +8,15 @@ import { createPortal } from 'react-dom';
 import './VideoModal.css';
 
 const VideoModal = ({ videoKey, onClose, title }) => {
+  const dialogRef = useDialog(Boolean(videoKey), onClose);
   if (!videoKey) return null;
 
   return createPortal(
     <div className='video-modal-overlay' onClick={onClose}>
-      <div className='video-modal-content' onClick={(e) => e.stopPropagation()}>
+      <div className='video-modal-content' ref={dialogRef} role='dialog' aria-modal='true' aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className='video-modal-header'>
           <h3>{title}</h3>
-          <button className='close-btn' onClick={onClose}>
+          <button className='close-btn' aria-label='Close trailer' onClick={onClose}>
             ×
           </button>
         </div>

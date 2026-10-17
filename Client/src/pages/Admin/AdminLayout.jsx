@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import Logo from '../../components/Logo';
+import { useEffect, useState } from 'react';
 import {
   Layout,
   Menu,
@@ -7,7 +8,7 @@ import {
   Avatar,
   theme,
   Breadcrumb,
-  ConfigProvider,
+  Grid,
 } from 'antd';
 import {
   DashboardOutlined,
@@ -23,14 +24,25 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { setUser } from '../../redux/usersSlice';
+import { logout } from '../../redux/usersSlice';
 
 const { Header, Sider, Content } = Layout;
 
 const AdminLayout = ({ children }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const screens = Grid.useBreakpoint();
+  const mobile = !screens.md;
+  const [collapsed, setCollapsed] = useState(true);
+  useEffect(() => setCollapsed(mobile), [mobile]);
   const navigate = useNavigate();
   const location = useLocation();
+  useEffect(() => {
+    if (!mobile || collapsed) return;
+    const close = (e) => {
+      if (e.key === 'Escape') setCollapsed(true);
+    };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [mobile, collapsed]);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.users);
 
@@ -40,8 +52,7 @@ const AdminLayout = ({ children }) => {
   } = theme.useToken();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    dispatch(setUser(null));
+    dispatch(logout());
     navigate('/login');
   };
 
@@ -112,11 +123,19 @@ const AdminLayout = ({ children }) => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      {mobile && !collapsed && (
+        <button
+          className='cl-admin-scrim'
+          aria-label='Close admin menu'
+          onClick={() => setCollapsed(true)}
+        />
+      )}
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
         width={250}
+        collapsedWidth={mobile ? 0 : 80}
         style={{
           overflow: 'auto',
           height: '100vh',
@@ -128,46 +147,37 @@ const AdminLayout = ({ children }) => {
           boxShadow: '2px 0 8px rgba(0,0,0,0.15)',
         }}
       >
-        <div
-          className='demo-logo-vertical'
-          style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255, 255, 255, 0.05)',
-            margin: '16px',
-            borderRadius: '8px',
-          }}
-        >
-          <h1
-            style={{
-              color: '#f5c518',
-              margin: 0,
-              fontSize: collapsed ? '1rem' : '1.5rem',
-              fontWeight: 'bold',
-              letterSpacing: '1px',
-              transition: 'all 0.3s',
-            }}
-          >
-            {collapsed ? 'CL' : 'CineLog'}
-          </h1>
+        <div className='cl-admin-brand'>
+          <Logo compact={collapsed && !mobile} />
         </div>
+        {mobile && (
+          <Button onClick={() => setCollapsed(true)} style={{ margin: 16 }}>
+            Close menu
+          </Button>
+        )}
         <Menu
           theme='dark'
           mode='inline'
           selectedKeys={[location.pathname]}
-          onClick={({ key }) => navigate(key)}
+          onClick={({ key }) => {
+            navigate(key);
+            if (mobile) setCollapsed(true);
+          }}
           items={menuItems}
           style={{ fontSize: '1rem', fontWeight: 500 }}
         />
       </Sider>
       <Layout
-        style={{ marginLeft: collapsed ? 80 : 250, transition: 'all 0.2s' }}
+        style={{
+          minWidth: 0,
+          marginLeft: mobile ? 0 : collapsed ? 80 : 250,
+          transition: 'all 0.2s',
+        }}
       >
         <Header
+          className='cl-admin-header'
           style={{
-            padding: '0 24px',
+            padding: mobile ? '0 12px' : '0 24px',
             background: colorBgContainer,
             display: 'flex',
             alignItems: 'center',
@@ -180,6 +190,8 @@ const AdminLayout = ({ children }) => {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <Button
+              aria-label={collapsed ? 'Open admin menu' : 'Close admin menu'}
+              aria-expanded={!collapsed}
               type='text'
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!collapsed)}
@@ -189,13 +201,10 @@ const AdminLayout = ({ children }) => {
                 height: 64,
               }}
             />
-            <Breadcrumb items={breadcrumbItems} />
+            {!mobile && <Breadcrumb items={breadcrumbItems} />}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <span style={{ fontWeight: 600, color: '#FFFFFF' }}>
-              To the moon 🚀
-            </span>
             <Dropdown
               menu={{ items: userMenuItems }}
               placement='bottomRight'
@@ -211,7 +220,7 @@ const AdminLayout = ({ children }) => {
               >
                 <Avatar
                   style={{
-                    backgroundColor: '#f5c518',
+                    backgroundColor: '#dfb582',
                     verticalAlign: 'middle',
                   }}
                   size='large'
@@ -225,9 +234,12 @@ const AdminLayout = ({ children }) => {
           </div>
         </Header>
         <Content
+          id='main-content'
+          tabIndex={-1}
           style={{
-            margin: '24px 16px',
-            padding: 24,
+            margin: mobile ? '16px 8px' : '24px 16px',
+            padding: mobile ? 12 : 24,
+            minWidth: 0,
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,

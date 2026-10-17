@@ -151,7 +151,7 @@
 .read-more-btn {
   background: none;
   border: none;
-  color: var(--color-accent-blue, #5799ef);
+  color: var(--color-accent-blue, #dfb582);
   font-weight: bold;
   cursor: pointer;
   padding: 0;
@@ -193,7 +193,7 @@
 }
 
 .known-for-scroll::-webkit-scrollbar-thumb:hover {
-  background: #e3b616;
+  background: #edcba4;
 }
 
 .known-for-card {

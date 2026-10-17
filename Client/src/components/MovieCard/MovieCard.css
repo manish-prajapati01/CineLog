@@ -63,7 +63,7 @@
 }
 
 .card-watchlist-btn:hover {
-  background: rgba(245, 197, 24, 0.8); /* IMDb Yellow transparent */
+  background: rgba(223, 181, 130, 0.8); /* IMDb Yellow transparent */
   color: #000;
 }
 

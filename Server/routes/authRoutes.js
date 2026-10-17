@@ -5,29 +5,27 @@
 
 const express = require("express");
 const router = express.Router();
+const authLimit = require('../middlewares/rateLimit')();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { protect } = require("../middlewares/auth");
 
 // JWT Secret with fallback for development
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  process.env.secret_jwt ||
-  "movieworld_jwt_secret_2024";
+const JWT_SECRET = require('../config/jwtConfig');
 
 /**
  * @route   POST /api/auth/register
  * @desc    Register a new user
  * @access  Public
  */
-router.post("/register", async (req, res) => {
+router.post("/register", authLimit, async (req, res) => {
   try {
-    console.log("Register request body:", req.body);
+
     const { name, email, password } = req.body;
 
     // Input validation
-    if (!name || !email || !password) {
+    if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string" || !name.trim() || !email.trim() || !password) {
       return res.status(400).json({
         success: false,
         message: "Name, email, and password are required",
@@ -41,15 +39,15 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    if (password.length < 6) {
+    if (password.length < 8 || password.length > 72) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 6 characters",
+        message: "Password must be 8 to 72 characters",
       });
     }
 
     // Check if user exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
     if (existingUser) {
       console.log("Registration failed: Email already exists -", email);
       return res.status(400).json({
@@ -64,7 +62,7 @@ router.post("/register", async (req, res) => {
     // Create user
     const user = await User.create({
       name,
-      email: email.toLowerCase(),
+      email: email.trim().toLowerCase(),
       password: hashedPassword,
     });
 
@@ -83,6 +81,7 @@ router.post("/register", async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {
@@ -99,12 +98,12 @@ router.post("/register", async (req, res) => {
  * @desc    Login user
  * @access  Public
  */
-router.post("/login", async (req, res) => {
+router.post("/login", authLimit, async (req, res) => {
   try {
     const { email, password } = req.body;
 
     // Input validation
-    if (!email || !password) {
+    if (typeof email !== "string" || typeof password !== "string" || !email.trim() || !password) {
       return res.status(400).json({
         success: false,
         message: "Email and password are required",
@@ -112,7 +111,7 @@ router.post("/login", async (req, res) => {
     }
 
     // Check if user exists (include password for comparison)
-    const user = await User.findOne({ email: email.toLowerCase() }).select(
+    const user = await User.findOne({ email: email.trim().toLowerCase() }).select(
       "+password"
     );
     if (!user) {
@@ -158,6 +157,7 @@ router.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {
@@ -185,6 +185,7 @@ router.get("/me", protect, async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        createdAt: user.createdAt,
         createdAt: user.createdAt,
       },
     });
@@ -220,6 +221,7 @@ router.put("/profile", protect, async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {

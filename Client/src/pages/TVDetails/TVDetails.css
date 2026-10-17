@@ -44,7 +44,7 @@
   color: #000 !important;
   border-color: var(--accent-primary) !important;
   font-weight: 700;
-  box-shadow: 0 0 10px rgba(245, 197, 24, 0.4);
+  box-shadow: 0 0 10px rgba(223, 181, 130, 0.4);
 }
 
 .season-chip.active:hover {

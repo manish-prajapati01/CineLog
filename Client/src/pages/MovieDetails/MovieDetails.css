@@ -6,7 +6,7 @@
   --imdb-text-primary: #ffffff;
   --imdb-text-secondary: #b3b3b3;
   --imdb-accent: #f5c518;
-  --imdb-blue: #5799ef;
+  --imdb-blue: #dfb582;
   --imdb-blue-hover: #4ea8ff;
   --imdb-border: #333;
   --max-width: 1280px;
@@ -16,7 +16,7 @@
   background-color: var(--imdb-bg);
   min-height: 100vh;
   color: var(--imdb-text-primary);
-  font-family: 'Roboto', Helvetica, Arial, sans-serif;
+  font-family: 'Source Sans 3', Helvetica, Arial, sans-serif;
   padding-bottom: 80px;
   overflow-x: hidden; /* Prevent horizontal scroll globally for page */
   padding-top: 80px; /* Added space for fixed Navbar */

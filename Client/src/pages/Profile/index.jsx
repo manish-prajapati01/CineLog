@@ -1,355 +1,258 @@
-/**
- * Profile Page - User's profile with ratings, reviews, and watchlist
- */
-import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { MovieCard, MovieGridSkeleton } from '../../components';
+import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import { setUser } from '../../redux/usersSlice';
 import api from '../../services/api';
-import watchlistService from '../../services/watchlistService';
-import './Profile.css';
-
-const Profile = () => {
-  const { user } = useSelector((state) => state.users);
-  const navigate = useNavigate();
-
-  // Dashboard State
-  const [activeTab, setActiveTab] = useState('ratings'); // Controls which section is visible (ratings/reviews/watchlist)
-  const [ratings, setRatings] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [watchlist, setWatchlist] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // User Stats Overview
-  const [stats, setStats] = useState({
-    totalRatings: 0,
-    totalReviews: 0,
-    totalWatchlist: 0,
-    averageRating: 0,
-  });
-
-  // Redirect if not logged in
+export default function Profile() {
+  const user = useSelector((s) => s.users.user),
+    items = useSelector((s) => s.library.items),
+    dispatch = useDispatch();
+  const [ratings, setRatings] = useState([]),
+    [reviews, setReviews] = useState([]),
+    [name, setName] = useState(user?.name || ''),
+    [message, setMessage] = useState(''),
+    [error, setError] = useState(''),
+    [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(true);
   useEffect(() => {
+    let live = true;
     if (!user) {
-      navigate('/login');
+      setLoading(false);
+      return;
     }
-  }, [user, navigate]);
-
-  // Fetch user data
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user) return;
-      setLoading(true);
-      try {
-        const [watchlistRes, reviewsRes, ratingsRes] = await Promise.all([
-          api.get('/watchlist'),
-          api.get('/reviews/user/my-reviews'),
-          api.get('/ratings/user/me'),
-        ]);
-
-        const wl = watchlistRes?.data || watchlistRes || [];
-        const rv = reviewsRes?.data || reviewsRes || [];
-        const rt = ratingsRes?.data || ratingsRes || [];
-
-        setWatchlist(wl);
-        setReviews(rv);
-        setRatings(rt);
-
-        // Calculate stats
-        const avgRating =
-          rt.length > 0
-            ? (rt.reduce((sum, r) => sum + r.score, 0) / rt.length).toFixed(1)
-            : 0;
-
-        setStats({
-          totalRatings: rt.length,
-          totalReviews: rv.length,
-          totalWatchlist: wl.length,
-          averageRating: avgRating,
-        });
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setLoading(false);
-      }
+    Promise.allSettled([
+      api.get('/ratings/user/me'),
+      api.get('/reviews/user/my-reviews'),
+    ]).then(([r, v]) => {
+      if (!live) return;
+      if (r.status === 'fulfilled') setRatings(r.value.data);
+      if (v.status === 'fulfilled') setReviews(v.value.data);
+      if (r.status === 'rejected' || v.status === 'rejected')
+        setError(
+          'Some activity could not be loaded. Please refresh to try again.',
+        );
+      setLoading(false);
+    });
+    return () => {
+      live = false;
     };
-    fetchUserData();
   }, [user]);
-
-  const handleRemoveFromWatchlist = async (tmdbId, mediaType) => {
+  useEffect(() => setName(user?.name || ''), [user?.name]);
+  async function save(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    setMessage('');
     try {
-      await watchlistService.remove(tmdbId, mediaType);
-      setWatchlist(
-        watchlist.filter(
-          (item) => !(item.tmdbId === tmdbId && item.mediaType === mediaType),
-        ),
-      );
-    } catch (error) {
-      console.error('Error removing from watchlist:', error);
+      const r = await api.put('/auth/profile', { name: name.trim() });
+      dispatch(setUser({ ...user, ...r.data }));
+      setMessage('Your profile has been updated.');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
     }
-  };
-
-  const handleDeleteReview = async (reviewId) => {
-    try {
-      await api.delete(`/reviews/${reviewId}`);
-      setReviews(reviews.filter((r) => r._id !== reviewId));
-    } catch (error) {
-      console.error('Error deleting review:', error);
-    }
-  };
-
-  if (!user) {
+  }
+  if (!user)
     return (
-      <div className='profile-page'>
-        <div className='login-prompt-container'>
-          <h2>Please login to view your profile</h2>
-          <Link to='/login' className='btn-login'>
-            Login
-          </Link>
-        </div>
+      <div className='cl-page cl-empty'>
+        <h1>Your profile</h1>
+        <p>Sign in to see your film journey.</p>
+        <Link to='/login' className='cl-button'>
+          Sign in ↗
+        </Link>
       </div>
     );
-  }
-
+  const watched = items.filter((i) => i.status === 'watched'),
+    average = ratings.length
+      ? (ratings.reduce((n, r) => n + r.score, 0) / ratings.length).toFixed(1)
+      : '—';
   return (
-    <div className='profile-page'>
-      {/* Back Button */}
-      <button className='back-button' onClick={() => navigate(-1)}>
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width='24'
-          height='24'
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-        >
-          <path d='M19 12H5M12 19l-7-7 7-7' />
-        </svg>
-      </button>
-
-      {/* Profile Header */}
-      <div className='profile-header'>
-        <div className='profile-avatar'>
-          {user.avatar ? (
-            <img src={user.avatar} alt={user.name} />
-          ) : (
-            <div className='avatar-placeholder'>
-              {user.name?.charAt(0).toUpperCase() || 'U'}
-            </div>
-          )}
-        </div>
-        <div className='profile-info'>
+    <div className='cl-page cl-top-space cl-profile-page'>
+      <div className='cl-profile-header'>
+        <span className='cl-avatar' aria-hidden='true'>
+          {user.name
+            ?.trim()
+            .split(/\s+/)
+            .slice(0, 2)
+            .map((part) => part[0])
+            .join('')
+            .toUpperCase()}
+        </span>
+        <div>
+          <p className='cl-eyebrow'>YOUR CINELOG</p>
           <h1>{user.name}</h1>
-          <p className='profile-email'>{user.email}</p>
-          <p className='profile-joined'>
-            Member since{' '}
-            {new Date(user.createdAt || Date.now()).toLocaleDateString()}
+          <p className='cl-muted'>
+            {user.createdAt
+              ? `Member since ${new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}`
+              : 'Your personal corner of cinema'}
           </p>
         </div>
-      </div>
-
-      {/* Stats Overview */}
-      <div className='profile-stats'>
-        <div className='stat-card'>
-          <span className='stat-number'>{stats.totalWatchlist}</span>
-          <span className='stat-label'>In Watchlist</span>
-        </div>
-        <div className='stat-card'>
-          <span className='stat-number'>{stats.totalRatings}</span>
-          <span className='stat-label'>Ratings</span>
-        </div>
-        <div className='stat-card'>
-          <span className='stat-number'>{stats.totalReviews}</span>
-          <span className='stat-label'>Reviews</span>
-        </div>
-        {stats.averageRating > 0 && (
-          <div className='stat-card highlight'>
-            <span className='stat-number'>{stats.averageRating}</span>
-            <span className='stat-label'>Avg Rating</span>
-          </div>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className='profile-tabs'>
-        <button
-          className={`tab-btn ${activeTab === 'watchlist' ? 'active' : ''}`}
-          onClick={() => setActiveTab('watchlist')}
+        <Link
+          className='cl-button secondary cl-profile-library-link'
+          to='/watchlist'
         >
-          Watchlist ({watchlist.length})
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'ratings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('ratings')}
-        >
-          My Ratings ({ratings.length})
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
-          onClick={() => setActiveTab('reviews')}
-        >
-          My Reviews ({reviews.length})
-        </button>
+          Open my library <span aria-hidden='true'>↗</span>
+        </Link>
       </div>
-
-      {/* Tab Content */}
-      <div className='profile-content'>
-        {loading ? (
-          <MovieGridSkeleton count={6} />
-        ) : (
-          <>
-            {/* Watchlist Tab */}
-            {activeTab === 'watchlist' && (
-              <div className='watchlist-content'>
-                {watchlist.length > 0 ? (
-                  <div className='profile-grid'>
-                    {watchlist.map((item, index) => (
-                      <div key={item._id} className='profile-card'>
-                        <MovieCard
-                          movie={{
-                            id: item.tmdbId,
-                            title: item.title,
-                            name: item.title,
-                            poster_path: item.posterPath,
-                          }}
-                          index={index}
-                          mediaType={item.mediaType}
-                        />
-                        <button
-                          className='remove-btn'
-                          onClick={() =>
-                            handleRemoveFromWatchlist(
-                              item.tmdbId,
-                              item.mediaType,
-                            )
-                          }
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className='empty-state'>
-                    <p>Your watchlist is empty</p>
-                    <Link to='/movies' className='browse-link'>
-                      Browse Movies
-                    </Link>
-                  </div>
+      <div className='cl-library-stats'>
+        <div className='cl-stat'>
+          <strong>{watched.length}</strong>
+          <span>Titles watched</span>
+        </div>
+        <div className='cl-stat'>
+          <strong>{loading ? '—' : ratings.length}</strong>
+          <span>Ratings · latest 100</span>
+        </div>
+        <div className='cl-stat'>
+          <strong>{loading ? '—' : average}</strong>
+          <span>Average score / 10</span>
+        </div>
+        <div className='cl-stat'>
+          <strong>{items.filter((i) => i.status === 'planned').length}</strong>
+          <span>On your watchlist</span>
+        </div>
+      </div>
+      {error && (
+        <p className='cl-notice' role='alert'>
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className='cl-notice' role='status'>
+          {message}
+        </p>
+      )}
+      <div className='cl-profile-grid'>
+        <section className='cl-panel'>
+          <h2>Recently rated</h2>
+          {loading ? (
+            <p>Loading your activity...</p>
+          ) : !ratings.length ? (
+            <p className='cl-muted'>You have not rated a title yet.</p>
+          ) : (
+            ratings.slice(0, 8).map((r) => (
+              <Link
+                className='cl-activity'
+                key={r._id}
+                to={`/${r.mediaType}/${r.tmdbId}`}
+              >
+                {r.posterPath && (
+                  <img
+                    src={`https://image.tmdb.org/t/p/w92${r.posterPath}`}
+                    alt=''
+                  />
                 )}
-              </div>
-            )}
-
-            {/* Ratings Tab */}
-            {activeTab === 'ratings' && (
-              <div className='ratings-content'>
-                {ratings.length > 0 ? (
-                  <div className='ratings-grid'>
-                    {ratings.map((rating) => (
-                      <div key={rating._id} className='rating-card'>
-                        <div className='rating-poster'>
-                          <img
-                            src={
-                              rating.posterPath
-                                ? `https://image.tmdb.org/t/p/w185${rating.posterPath}`
-                                : 'https://placehold.co/185x278?text=No+Poster'
-                            }
-                            alt={rating.title}
-                          />
-                          <div className='rating-badge'>
-                            <span className='rating-score'>{rating.score}</span>
-                            <span className='rating-max'>/10</span>
-                          </div>
-                        </div>
-                        <div className='rating-info'>
-                          <Link
-                            to={`/${rating.mediaType}/${rating.tmdbId}`}
-                            className='rating-title'
-                          >
-                            {rating.title}
-                          </Link>
-                          <span className='rating-type'>
-                            {rating.mediaType === 'movie'
-                              ? '🎬 Movie'
-                              : '📺 TV'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                <div>
+                  <h3>{r.title || 'View title'}</h3>
+                  <p>
+                    {new Date(r.updatedAt || r.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <span className='cl-score' style={{ marginLeft: 'auto' }}>
+                  ★ {r.score}
+                </span>
+              </Link>
+            ))
+          )}
+        </section>
+        <section className='cl-panel cl-profile-settings'>
+          <p className='cl-eyebrow'>ACCOUNT</p>
+          <h2>Profile details</h2>
+          <form onSubmit={save}>
+            <label>
+              Display name
+              <input
+                required
+                minLength={2}
+                maxLength={50}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </label>
+            <label>
+              Email
+              <input
+                value={user.email || ''}
+                readOnly
+                aria-describedby='profile-email-help'
+              />
+            </label>
+            <p id='profile-email-help' className='cl-muted'>
+              Your email is private and cannot be changed here.
+            </p>
+            <button
+              className='cl-button'
+              disabled={
+                busy || name.trim() === user.name || name.trim().length < 2
+              }
+            >
+              {busy ? 'Saving...' : 'Save profile'}
+            </button>
+          </form>
+          <Link
+            className='cl-text-link'
+            style={{ marginTop: 25 }}
+            to='/watchlist'
+          >
+            Open your library & journal ↗
+          </Link>
+        </section>
+        <section className='cl-panel'>
+          <h2>Your recent reviews</h2>
+          {loading ? (
+            <p className='cl-muted'>Loading your reviews…</p>
+          ) : !reviews.length ? (
+            <p className='cl-muted'>Your published reviews will appear here.</p>
+          ) : (
+            reviews.slice(0, 6).map((r) => (
+              <Link
+                className='cl-activity'
+                key={r._id}
+                to={`/${r.mediaType}/${r.tmdbId}`}
+              >
+                <div>
+                  <h3>{r.movieTitle || r.title}</h3>
+                  <p>
+                    {r.content.slice(0, 140)}
+                    {r.content.length > 140 ? '...' : ''}
+                  </p>
+                </div>
+              </Link>
+            ))
+          )}
+        </section>
+        <section className='cl-panel'>
+          <h2>From your diary</h2>
+          {!watched.length ? (
+            <p className='cl-muted'>
+              Mark a title as watched in your library to start your diary.
+            </p>
+          ) : (
+            watched
+              .slice()
+              .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt))
+              .slice(0, 6)
+              .map((i) => (
+                <Link
+                  className='cl-activity'
+                  key={`${i.mediaType}-${i.tmdbId}`}
+                  to={`/${i.mediaType}/${i.tmdbId}`}
+                >
+                  <div>
+                    <h3>{i.title}</h3>
+                    <p>
+                      {i.watchedAt
+                        ? new Date(i.watchedAt).toLocaleDateString()
+                        : 'Watched'}
+                      {i.collectionName && ` · ${i.collectionName}`}
+                    </p>
                   </div>
-                ) : (
-                  <div className='empty-state'>
-                    <p>You have not rated any movies or TV shows yet</p>
-                    <Link to='/movies' className='browse-link'>
-                      Browse Movies to Rate
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Reviews Tab */}
-            {activeTab === 'reviews' && (
-              <div className='reviews-content'>
-                {reviews.length > 0 ? (
-                  <div className='reviews-list'>
-                    {reviews.map((review) => (
-                      <div key={review._id} className='review-card'>
-                        <div className='review-movie-info'>
-                          {review.posterPath && (
-                            <Link
-                              to={`/${review.mediaType}/${review.tmdbId}`}
-                              className='review-poster-thumb'
-                            >
-                              <img
-                                src={`https://image.tmdb.org/t/p/w92${review.posterPath}`}
-                                alt={review.movieTitle || 'Poster'}
-                              />
-                            </Link>
-                          )}
-                          <div className='review-movie-text'>
-                            <Link
-                              to={`/${review.mediaType}/${review.tmdbId}`}
-                              className='review-movie-title-link'
-                            >
-                            {review.movieTitle || 'Unknown Title'}
-                            </Link>
-                            <span className='review-media-badge'>
-                              {review.mediaType === 'movie' ? '🎬 Movie' : '📺 TV'}
-                            </span>
-                            <span className='review-date'>
-                              {new Date(review.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                        <p className='review-text'>{review.content}</p>
-                        <button
-                          className='delete-btn'
-                          onClick={() => handleDeleteReview(review._id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className='empty-state'>
-                    <p>You haven&apos;t written any reviews yet</p>
-                    <Link to='/movies' className='browse-link'>
-                      Browse Movies to Review
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
+                </Link>
+              ))
+          )}
+        </section>
       </div>
     </div>
   );
-};
-
-export default Profile;
+}

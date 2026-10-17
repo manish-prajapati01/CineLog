@@ -69,7 +69,7 @@ router.get("/user/my-reviews", protect, async (req, res) => {
     res.json({ success: true, data: populatedReviews });
   } catch (error) {
     console.error("Error fetching user reviews:", error.message);
-    res.json({ success: true, data: [] });
+    res.status(500).json({ success: false, message: "Unable to load reviews" });
   }
 });
 
@@ -85,6 +85,9 @@ router.post("/", protect, async (req, res) => {
       posterPath,
     } = req.body;
 
+    if (!Number.isSafeInteger(Number(tmdbId)) || Number(tmdbId) <= 0 || !['movie','tv'].includes(mediaType) || typeof title !== 'string' || typeof content !== 'string' || content.trim().length < 10 || content.length > 5000 || title.length > 100) {
+      return res.status(400).json({ success: false, message: 'Use a valid title and a review between 10 and 5000 characters' });
+    }
     const existingReview = await Review.findOne({
       userId: req.userId,
       tmdbId,
@@ -109,8 +112,11 @@ router.post("/", protect, async (req, res) => {
       posterPath: posterPath || null,
     });
 
-    await Movie.getOrCreate(tmdbId, mediaType, movieTitle, posterPath);
-    await Movie.updateStats(tmdbId, mediaType);
+    // Cached analytics must not turn a successful review into a failed submission.
+    try {
+      await Movie.getOrCreate(tmdbId, mediaType, movieTitle || title, posterPath);
+      await Movie.updateStats(Number(tmdbId), mediaType);
+    } catch (error) { console.error('Review analytics refresh failed:', error.message); }
 
     // Populate user info
     await review.populate("userId", "name avatar");
@@ -121,7 +127,7 @@ router.post("/", protect, async (req, res) => {
       data: review,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.code === 11000 ? 409 : error.name === "ValidationError" ? 400 : 500).json({ success: false, message: error.code === 11000 ? "You have already reviewed this title" : error.message });
   }
 });
 
@@ -133,23 +139,30 @@ router.post("/", protect, async (req, res) => {
 router.get("/:tmdbId/:mediaType", optionalAuth, async (req, res) => {
   try {
     const { tmdbId, mediaType } = req.params;
-    const { page = 1, limit = 10, sort = "recent" } = req.query;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(50, parseInt(req.query.limit) || 10));
+    const sort = req.query.sort || "recent";
 
     const sortOptions = {
       recent: { createdAt: -1 },
       oldest: { createdAt: 1 },
-      popular: { "likes.length": -1 },
+      popular: { createdAt: -1 },
     };
 
-    const reviews = await Review.find({
-      tmdbId: parseInt(tmdbId),
-      mediaType,
-      isApproved: true,
-    })
-      .populate("userId", "name avatar")
-      .sort(sortOptions[sort] || sortOptions.recent)
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+    const filter = { tmdbId: parseInt(tmdbId), mediaType, isApproved: true };
+    let reviews;
+    if (sort === 'popular') {
+      const rows = await Review.aggregate([
+        { $match: filter },
+        { $addFields: { likeCount: { $size: { $ifNull: ['$likes', []] } } } },
+        { $sort: { likeCount: -1, createdAt: -1 } },
+        { $skip: (page - 1) * limit }, { $limit: limit },
+      ]);
+      reviews = await Review.populate(rows, { path: 'userId', select: 'name avatar' });
+    } else {
+      reviews = await Review.find(filter).populate('userId', 'name avatar')
+        .sort(sortOptions[sort] || sortOptions.recent).skip((page - 1) * limit).limit(limit);
+    }
 
     const total = await Review.countDocuments({
       tmdbId: parseInt(tmdbId),
@@ -168,7 +181,7 @@ router.get("/:tmdbId/:mediaType", optionalAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.code === 11000 ? 409 : error.name === "ValidationError" ? 400 : 500).json({ success: false, message: error.code === 11000 ? "You have already reviewed this title" : error.message });
   }
 });
 
@@ -205,7 +218,7 @@ router.put("/:id/like", protect, async (req, res) => {
       likeCount: review.likes.length,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.code === 11000 ? 409 : error.name === "ValidationError" ? 400 : 500).json({ success: false, message: error.code === 11000 ? "You have already reviewed this title" : error.message });
   }
 });
 
@@ -237,11 +250,11 @@ router.delete("/:id", protect, async (req, res) => {
     await review.deleteOne();
 
     // Update movie stats
-    await Movie.updateStats(review.tmdbId, review.mediaType);
+    await Movie.updateStats(review.tmdbId, review.mediaType).catch(error => console.error("Review analytics refresh failed:", error.message));
 
     res.json({ success: true, message: "Review deleted" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.code === 11000 ? 409 : error.name === "ValidationError" ? 400 : 500).json({ success: false, message: error.code === 11000 ? "You have already reviewed this title" : error.message });
   }
 });
 

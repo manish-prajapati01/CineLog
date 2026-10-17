@@ -1,10 +1,5 @@
-import apiRequest from '.';
-
-
-export const UploadImage = async (payload) => {
-    return await apiRequest({
-        method: 'POST',
-        endPoint: '/api/images/upload-image',
-        payload
-    });
-};
+import api from '../services/api';
+export const UploadImage = (payload) =>
+  api.post('/images/upload-image', payload, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });

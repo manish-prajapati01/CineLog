@@ -14,7 +14,7 @@ const seriesSchema = new mongoose.Schema(
     language: { type: String, required: true },
     releaseDate: { type: String, required: true },
     trailer: { type: String, required: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     cast: [{ type: mongoose.Schema.Types.ObjectId, ref: "artists", required: false }],
     
     // Series specific fields

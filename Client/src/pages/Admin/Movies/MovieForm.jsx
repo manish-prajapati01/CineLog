@@ -1,4 +1,15 @@
-import { Button, Form, Input, Select, Tabs, Upload, message, InputNumber, Row, Col } from 'antd';
+import {
+  Button,
+  Form,
+  Input,
+  Select,
+  Tabs,
+  Upload,
+  message,
+  InputNumber,
+  Row,
+  Col,
+} from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -22,7 +33,7 @@ function MovieForm() {
   const [activeTab, setActiveTab] = useState('1');
 
   // Load Artists for Select dropdowns
-  const fetchAllArtists = async () => {
+  const fetchAllArtists = useCallback(async () => {
     try {
       dispatch(setLoading(true));
       const response = await GetAllArtists();
@@ -38,7 +49,7 @@ function MovieForm() {
       message.error(error.message);
       dispatch(setLoading(false));
     }
-  };
+  }, [dispatch]);
 
   // Load existing movie data
   const getMovieById = useCallback(
@@ -64,10 +75,11 @@ function MovieForm() {
           writer: data.writer?._id,
           // Cast is array of objects { artist: {_id...}, role: "..." }
           // Form list expects array of objects. We need to map `artist` object to `artist` ID for the Select
-          cast: data.cast?.map((c) => ({
-             artist: c.artist?._id,
-             role: c.role
-          })) || [],
+          cast:
+            data.cast?.map((c) => ({
+              artist: c.artist?._id,
+              role: c.role,
+            })) || [],
           runtimeHours,
           runtimeMinutes,
         };
@@ -88,20 +100,21 @@ function MovieForm() {
     if (params.id) {
       getMovieById(params.id);
     }
-  }, [params.id, getMovieById]);
+  }, [params.id, getMovieById, fetchAllArtists]);
 
   // Form Submit Handler
   const onFinish = async (values) => {
     try {
       dispatch(setLoading(true));
-      
+
       // Calculate total runtime in minutes
-      const totalRuntime = (values.runtimeHours || 0) * 60 + (values.runtimeMinutes || 0);
-      
+      const totalRuntime =
+        (values.runtimeHours || 0) * 60 + (values.runtimeMinutes || 0);
+
       const payload = {
-          ...values,
-          runtime: totalRuntime,
-          // cast is already in correct format { artist: ID, role: String } from Form.List
+        ...values,
+        runtime: totalRuntime,
+        // cast is already in correct format { artist: ID, role: String } from Form.List
       };
 
       // Remove temp fields
@@ -173,7 +186,10 @@ function MovieForm() {
         <h1 className='text-2xl font-bold text-white'>
           {params.id ? 'Edit Movie' : 'Add New Movie'}
         </h1>
-        <Button onClick={() => navigate('/admin/movies')} > Back to List </Button>
+        <Button onClick={() => navigate('/admin/movies')}>
+          {' '}
+          Back to List{' '}
+        </Button>
       </div>
 
       <Tabs
@@ -185,43 +201,77 @@ function MovieForm() {
             key: '1',
             label: 'Movie Details',
             children: (
-              <Form layout='vertical' form={form} onFinish={onFinish} className='max-w-4xl'>
+              <Form
+                layout='vertical'
+                form={form}
+                onFinish={onFinish}
+                className='max-w-4xl'
+              >
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                  <Form.Item label='Movie Name' name='name' rules={[{ required: true }]}>
-                    <Input placeholder='Enter movie title' />
+                  <Form.Item
+                    label='Movie Name'
+                    name='name'
+                    rules={[{ required: true }]}
+                  >
+                    <Input />
                   </Form.Item>
-                  <Form.Item label='Release Date' name='releaseDate' rules={[{ required: true }]}>
+                  <Form.Item
+                    label='Release Date'
+                    name='releaseDate'
+                    rules={[{ required: true }]}
+                  >
                     <Input type='date' />
                   </Form.Item>
                 </div>
 
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                    <Form.Item label='Runtime (Hours)' name='runtimeHours'>
-                         <InputNumber min={0} max={10} style={{ width: '100%' }} placeholder="Hours" />
-                    </Form.Item>
-                    <Form.Item label='Runtime (Minutes)' name='runtimeMinutes'>
-                         <InputNumber min={0} max={59} style={{ width: '100%' }} placeholder="Minutes" />
-                    </Form.Item>
-                     <Form.Item label='Country' name='country'>
-                        <Select showSearch optionFilterProp='label' options={[
-                            { value: 'India', label: 'India' },
-                            { value: 'USA', label: 'USA' },
-                            { value: 'UK', label: 'UK' },
-                            { value: 'China', label: 'China' },
-                            { value: 'Korea', label: 'Korea' },
-                            { value: 'Japan', label: 'Japan' },
-                            { value: 'France', label: 'France' },
-                        ]} placeholder="Select Country" />
-                    </Form.Item>
+                  <Form.Item label='Runtime (Hours)' name='runtimeHours'>
+                    <InputNumber
+                      min={0}
+                      max={10}
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                  <Form.Item label='Runtime (Minutes)' name='runtimeMinutes'>
+                    <InputNumber
+                      min={0}
+                      max={59}
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                  <Form.Item label='Country' name='country'>
+                    <Select
+                      showSearch
+                      optionFilterProp='label'
+                      options={[
+                        { value: 'India', label: 'India' },
+                        { value: 'USA', label: 'USA' },
+                        { value: 'UK', label: 'UK' },
+                        { value: 'China', label: 'China' },
+                        { value: 'Korea', label: 'Korea' },
+                        { value: 'Japan', label: 'Japan' },
+                        { value: 'France', label: 'France' },
+                      ]}
+                    />
+                  </Form.Item>
                 </div>
 
-                <Form.Item label='Plot Description' name='plot' rules={[{ required: true }]}>
-                  <TextArea rows={3} placeholder='Enter movie plot...' />
+                <Form.Item
+                  label='Plot Description'
+                  name='plot'
+                  rules={[{ required: true }]}
+                >
+                  <TextArea rows={3} />
                 </Form.Item>
 
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                  <Form.Item label='Genre' name='genre' rules={[{ required: true }]}>
-                    <Select mode="multiple"
+                  <Form.Item
+                    label='Genre'
+                    name='genre'
+                    rules={[{ required: true }]}
+                  >
+                    <Select
+                      mode='multiple'
                       options={[
                         { value: 'Action', label: 'Action' },
                         { value: 'Comedy', label: 'Comedy' },
@@ -233,10 +283,13 @@ function MovieForm() {
                         { value: 'Adventure', label: 'Adventure' },
                         { value: 'Fantasy', label: 'Fantasy' },
                       ]}
-                      placeholder='Select Genres'
                     />
                   </Form.Item>
-                  <Form.Item label='Language' name='language' rules={[{ required: true }]}>
+                  <Form.Item
+                    label='Language'
+                    name='language'
+                    rules={[{ required: true }]}
+                  >
                     <Select
                       options={[
                         { value: 'English', label: 'English' },
@@ -246,75 +299,132 @@ function MovieForm() {
                         { value: 'Malayalam', label: 'Malayalam' },
                         { value: 'Kannada', label: 'Kannada' },
                       ]}
-                      placeholder='Select Language'
                     />
                   </Form.Item>
-                  <Form.Item label='Trailer URL' name='trailer' rules={[{ required: true }]}>
-                    <Input placeholder='YouTube Link' />
+                  <Form.Item
+                    label='Trailer URL'
+                    name='trailer'
+                    rules={[{ required: true }]}
+                  >
+                    <Input />
                   </Form.Item>
                 </div>
 
                 <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-                  <Form.Item label='Hero (Lead)' name='hero' rules={[{ required: true }]}>
-                    <Select showSearch optionFilterProp='label' options={artists} placeholder='Lead Actor' />
+                  <Form.Item
+                    label='Hero (Lead)'
+                    name='hero'
+                    rules={[{ required: true }]}
+                  >
+                    <Select
+                      showSearch
+                      optionFilterProp='label'
+                      options={artists}
+                    />
                   </Form.Item>
-                  <Form.Item label='Heroine (Lead)' name='heroine' rules={[{ required: true }]}>
-                    <Select showSearch optionFilterProp='label' options={artists} placeholder='Lead Actress' />
+                  <Form.Item
+                    label='Heroine (Lead)'
+                    name='heroine'
+                    rules={[{ required: true }]}
+                  >
+                    <Select
+                      showSearch
+                      optionFilterProp='label'
+                      options={artists}
+                    />
                   </Form.Item>
-                  <Form.Item label='Director' name='director' rules={[{ required: true }]}>
-                    <Select showSearch optionFilterProp='label' options={artists} placeholder='Director' />
+                  <Form.Item
+                    label='Director'
+                    name='director'
+                    rules={[{ required: true }]}
+                  >
+                    <Select
+                      showSearch
+                      optionFilterProp='label'
+                      options={artists}
+                    />
                   </Form.Item>
-                   <Form.Item label='Writer' name='writer'>
-                    <Select showSearch optionFilterProp='label' options={artists} placeholder='Writer' />
+                  <Form.Item label='Writer' name='writer'>
+                    <Select
+                      showSearch
+                      optionFilterProp='label'
+                      options={artists}
+                    />
                   </Form.Item>
                 </div>
 
                 {/* Dynamic Cast Section */}
-                 <div className="mb-6 p-4 border border-gray-700 rounded bg-gray-900 bg-opacity-30">
-                     <h3 className="text-lg font-semibold mb-4 text-gray-300">Supporting Cast</h3>
-                     <Form.List name="cast">
-                        {(fields, { add, remove }) => (
-                            <>
-                            {fields.map(({ key, name, ...restField }) => (
-                                <Row key={key} gutter={16} align="middle" className="mb-3">
-                                    <Col span={10}>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[name, 'artist']}
-                                            rules={[{ required: true, message: 'Select Artist' }]}
-                                            className="mb-0"
-                                        >
-                                            <Select showSearch optionFilterProp="label" options={artists} placeholder="Select Artist (Real Name)" />
-                                        </Form.Item>
-                                    </Col>
-                                    <Col span={10}>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[name, 'role']}
-                                            rules={[{ required: true, message: 'Enter Role' }]}
-                                            className="mb-0"
-                                        >
-                                            <Input placeholder="Character Name" />
-                                        </Form.Item>
-                                    </Col>
-                                    <Col span={4}>
-                                        <Button type="text" danger icon={<CloseOutlined />} onClick={() => remove(name)} />
-                                    </Col>
-                                </Row>
-                            ))}
-                            <Form.Item className="mb-0">
-                                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                                    Add Cast Member
-                                </Button>
-                            </Form.Item>
-                            </>
-                        )}
-                    </Form.List>
-                 </div>
-
+                <div className='mb-6 p-4 border border-gray-700 rounded bg-gray-900 bg-opacity-30'>
+                  <h3 className='text-lg font-semibold mb-4 text-gray-300'>
+                    Supporting Cast
+                  </h3>
+                  <Form.List name='cast'>
+                    {(fields, { add, remove }) => (
+                      <>
+                        {fields.map(({ key, name, ...restField }) => (
+                          <Row
+                            key={key}
+                            gutter={16}
+                            align='middle'
+                            className='mb-3'
+                          >
+                            <Col span={10}>
+                              <Form.Item
+                                {...restField}
+                                name={[name, 'artist']}
+                                rules={[
+                                  { required: true, message: 'Select Artist' },
+                                ]}
+                                className='mb-0'
+                              >
+                                <Select
+                                  showSearch
+                                  optionFilterProp='label'
+                                  options={artists}
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col span={10}>
+                              <Form.Item
+                                {...restField}
+                                name={[name, 'role']}
+                                rules={[
+                                  { required: true, message: 'Enter Role' },
+                                ]}
+                                className='mb-0'
+                              >
+                                <Input />
+                              </Form.Item>
+                            </Col>
+                            <Col span={4}>
+                              <Button
+                                type='text'
+                                danger
+                                icon={<CloseOutlined />}
+                                onClick={() => remove(name)}
+                              />
+                            </Col>
+                          </Row>
+                        ))}
+                        <Form.Item className='mb-0'>
+                          <Button
+                            type='dashed'
+                            onClick={() => add()}
+                            block
+                            icon={<PlusOutlined />}
+                          >
+                            Add Cast Member
+                          </Button>
+                        </Form.Item>
+                      </>
+                    )}
+                  </Form.List>
+                </div>
 
                 <div className='flex justify-end gap-3 mt-5'>
-                  <Button onClick={() => navigate('/admin/movies')}>Cancel</Button>
+                  <Button onClick={() => navigate('/admin/movies')}>
+                    Cancel
+                  </Button>
                   <Button type='primary' htmlType='submit'>
                     {params.id ? 'Update Movie' : 'Save Movie'}
                   </Button>
@@ -330,25 +440,53 @@ function MovieForm() {
               <div className='flex flex-col gap-6'>
                 <div className='flex flex-wrap gap-4'>
                   {movie?.posters?.map((image) => (
-                    <div key={image} className='relative group border border-gray-700 rounded-lg overflow-hidden w-32 h-44'>
-                      <img src={image} alt='poster' className='w-full h-full object-cover' />
+                    <div
+                      key={image}
+                      className='relative group border border-gray-700 rounded-lg overflow-hidden w-32 h-44'
+                    >
+                      <img
+                        src={image}
+                        alt='poster'
+                        className='w-full h-full object-cover'
+                      />
                       <div
                         className='absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer'
                         onClick={() => deletePoster(image)}
                       >
-                        <span className='text-red-500 font-bold text-xl'>🗑</span>
+                        <span className='text-red-500 font-bold text-xl'>
+                          🗑
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 <div className='border border-dashed border-gray-600 p-6 rounded-lg bg-gray-900 bg-opacity-50'>
-                   <Upload beforeUpload={(f) => { setFile(f); return false; }} onRemove={() => setFile(null)} maxCount={1} listType='picture'>
-                      <Button type='dashed' className='text-white border-gray-500'> Select Poster Image </Button>
-                   </Upload>
-                   <Button type='primary' onClick={handleImageUpload} disabled={!file} className='mt-4'>
-                      Upload Selected Poster
-                   </Button>
+                  <Upload
+                    beforeUpload={(f) => {
+                      setFile(f);
+                      return false;
+                    }}
+                    onRemove={() => setFile(null)}
+                    maxCount={1}
+                    listType='picture'
+                  >
+                    <Button
+                      type='dashed'
+                      className='text-white border-gray-500'
+                    >
+                      {' '}
+                      Select Poster Image{' '}
+                    </Button>
+                  </Upload>
+                  <Button
+                    type='primary'
+                    onClick={handleImageUpload}
+                    disabled={!file}
+                    className='mt-4'
+                  >
+                    Upload Selected Poster
+                  </Button>
                 </div>
               </div>
             ),

@@ -7,10 +7,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 // JWT Secret with fallback for development
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  process.env.secret_jwt ||
-  "movieworld_jwt_secret_2024";
+const JWT_SECRET = require('../config/jwtConfig');
 
 /**
  * Protect routes - Verify JWT token

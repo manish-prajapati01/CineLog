@@ -32,11 +32,11 @@
   --color-text-secondary: rgba(255, 255, 255, 0.7);
   --color-text-muted: rgba(255, 255, 255, 0.5);
   --color-text-accent: var(--color-imdb-yellow);
-  --color-link: #5799ef; /* IMDb Link Blue */
+  --color-link: #dfb582; /* IMDb Link Blue */
 
   /* Rating Colors */
   --color-rating-star: #f5c518;
-  --color-rating-good: #66cc33;
+  --color-rating-good: #93806c;
   --color-rating-average: #ffcc33;
   --color-rating-poor: #ff0000;
 
@@ -57,7 +57,7 @@
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 15px rgba(245, 197, 24, 0.2); /* Yellow glow */
+  --shadow-glow: 0 0 15px rgba(223, 181, 130, 0.2); /* Yellow glow */
 
   /* Border Radius - Sharper for IMDb look */
   --radius-sm: 2px;
@@ -72,7 +72,7 @@
 
   /* Typography */
   --font-family:
-    'Roboto', 'Helvetica', 'Arial', sans-serif; /* IMDb uses closer to Arial/Roboto */
+    'Source Sans 3', 'Helvetica', 'Arial', sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;

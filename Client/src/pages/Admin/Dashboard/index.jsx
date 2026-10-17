@@ -1,12 +1,23 @@
+import { GetAllSeries } from '../../../apis/series';
 import { useEffect, useState } from 'react';
-import { Card, Statistic, Row, Col, message, Table, Tag, Typography, Button } from 'antd';
-import { 
-    VideoCameraOutlined, 
-    TeamOutlined, 
-    UserOutlined, 
-    DesktopOutlined, 
-    ArrowRightOutlined,
-    StarFilled
+import {
+  Card,
+  Statistic,
+  Row,
+  Col,
+  message,
+  Table,
+  Tag,
+  Typography,
+  Button,
+} from 'antd';
+import {
+  VideoCameraOutlined,
+  TeamOutlined,
+  UserOutlined,
+  DesktopOutlined,
+  ArrowRightOutlined,
+  StarFilled,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { GetAllMovies } from '../../../apis/movies';
@@ -33,10 +44,11 @@ function Dashboard() {
   const fetchStats = async () => {
     try {
       dispatch(setLoading(true));
-      const [moviesRes, artistsRes, usersRes] = await Promise.all([
+      const [moviesRes, artistsRes, usersRes, seriesRes] = await Promise.all([
         GetAllMovies(),
         GetAllArtists(),
         GetAllUsers(),
+        GetAllSeries(),
       ]);
 
       const movies = moviesRes.movies || [];
@@ -47,7 +59,7 @@ function Dashboard() {
         movies: movies.length,
         artists: artists.length,
         users: users.length,
-        series: 0, // TODO: Fetch from Series API
+        series: (seriesRes.data || []).length,
       });
 
       // Get last 5 movies
@@ -69,75 +81,106 @@ function Dashboard() {
   }, []);
 
   const cardStyle = {
-      background: 'linear-gradient(145deg, #1f1f1f, #161616)',
-      border: '1px solid #333',
-      borderRadius: '8px',
-      overflow: 'hidden'
+    background: 'linear-gradient(145deg, #1c1b22, #161616)',
+    border: '1px solid #333',
+    borderRadius: '8px',
+    overflow: 'hidden',
   };
 
   const tableStyle = {
-      background: '#1f1f1f',
-      borderRadius: '8px',
-      border: '1px solid #333',
-  }
+    background: '#1c1b22',
+    borderRadius: '8px',
+    border: '1px solid #333',
+  };
 
   const columnsMovies = [
     {
       title: 'Poster',
-      dataIndex: 'poster',
+      dataIndex: 'posters',
       key: 'poster',
-      render: (text) => <img src={text} alt="poster" style={{ width: 40, height: 60, objectFit: 'cover', borderRadius: '4px' }} />,
+      render: (text) => (
+        <img
+          src={text?.[0]}
+          alt='poster'
+          style={{
+            width: 40,
+            height: 60,
+            objectFit: 'cover',
+            borderRadius: '4px',
+          }}
+        />
+      ),
     },
     {
       title: 'Title',
-      dataIndex: 'title',
+      dataIndex: 'name',
       key: 'title',
-      render: (text) => <span style={{ fontWeight: 600, color: '#fff' }}>{text}</span>,
+      render: (text) => (
+        <span style={{ fontWeight: 600, color: '#fff' }}>{text}</span>
+      ),
     },
     {
       title: 'Rating',
       dataIndex: 'rating',
       key: 'rating',
-      render: (text) => <span style={{ color: '#f5c518', fontWeight: 'bold' }}><StarFilled /> {text || 'N/A'}</span>,
+      render: (text) => (
+        <span style={{ color: '#dfb582', fontWeight: 'bold' }}>
+          <StarFilled /> {text || 'N/A'}
+        </span>
+      ),
     },
     {
       title: 'Date',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (text) => <span style={{ color: '#aaa' }}>{moment(text).format('DD MMM YYYY')}</span>,
+      render: (text) => (
+        <span style={{ color: '#aaa' }}>
+          {moment(text).format('DD MMM YYYY')}
+        </span>
+      ),
     },
   ];
 
   const columnsUsers = [
-      {
-          title: 'Name',
-          dataIndex: 'name',
-          key: 'name',
-          render: (text) => <span style={{ fontWeight: 600, color: '#fff' }}>{text}</span>,
-      },
-      {
-          title: 'Role',
-          dataIndex: 'role',
-          key: 'role',
-          render: (role) => (
-              <Tag color={role === 'admin' ? 'gold' : 'blue'}>
-                  {role?.toUpperCase()}
-              </Tag>
-          )
-      },
-      {
-        title: 'Joined',
-        dataIndex: 'createdAt',
-        key: 'createdAt',
-        render: (text) => <span style={{ color: '#aaa' }}>{moment(text).format('DD MMM YYYY')}</span>,
-      }
-  ]
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text) => (
+        <span style={{ fontWeight: 600, color: '#fff' }}>{text}</span>
+      ),
+    },
+    {
+      title: 'Role',
+      dataIndex: 'role',
+      key: 'role',
+      render: (role) => (
+        <Tag color={role === 'admin' ? 'gold' : 'blue'}>
+          {role?.toUpperCase()}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Joined',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (text) => (
+        <span style={{ color: '#aaa' }}>
+          {moment(text).format('DD MMM YYYY')}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div>
       <div style={{ marginBottom: '24px' }}>
-        <Title level={2} style={{ margin: 0, color: '#f5c518' }}>Dashboard Overview</Title>
-        <p style={{ color: '#aaa', margin: 0 }}>Welcome back to CineLog Control Center</p>
+        <Title level={2} style={{ margin: 0, color: '#dfb582' }}>
+          Dashboard Overview
+        </Title>
+        <p style={{ color: '#aaa', margin: 0 }}>
+          Welcome back to CineLog Control Center
+        </p>
       </div>
 
       <Row gutter={[24, 24]}>
@@ -147,7 +190,11 @@ function Dashboard() {
               title={<span style={{ color: '#888' }}>Total Movies</span>}
               value={stats.movies}
               valueStyle={{ color: '#fff', fontWeight: 'bold' }}
-              prefix={<VideoCameraOutlined style={{ color: '#f5c518', marginRight: '10px' }} />}
+              prefix={
+                <VideoCameraOutlined
+                  style={{ color: '#dfb582', marginRight: '10px' }}
+                />
+              }
             />
           </Card>
         </Col>
@@ -157,7 +204,11 @@ function Dashboard() {
               title={<span style={{ color: '#888' }}>Total TV Shows</span>}
               value={stats.series} // Mocked for now
               valueStyle={{ color: '#fff', fontWeight: 'bold' }}
-              prefix={<DesktopOutlined style={{ color: '#f5c518', marginRight: '10px' }} />}
+              prefix={
+                <DesktopOutlined
+                  style={{ color: '#dfb582', marginRight: '10px' }}
+                />
+              }
             />
           </Card>
         </Col>
@@ -167,7 +218,11 @@ function Dashboard() {
               title={<span style={{ color: '#888' }}>Total Artists</span>}
               value={stats.artists}
               valueStyle={{ color: '#fff', fontWeight: 'bold' }}
-              prefix={<TeamOutlined style={{ color: '#f5c518', marginRight: '10px' }} />}
+              prefix={
+                <TeamOutlined
+                  style={{ color: '#dfb582', marginRight: '10px' }}
+                />
+              }
             />
           </Card>
         </Col>
@@ -177,47 +232,77 @@ function Dashboard() {
               title={<span style={{ color: '#888' }}>Registered Users</span>}
               value={stats.users}
               valueStyle={{ color: '#fff', fontWeight: 'bold' }}
-              prefix={<UserOutlined style={{ color: '#f5c518', marginRight: '10px' }} />}
+              prefix={
+                <UserOutlined
+                  style={{ color: '#dfb582', marginRight: '10px' }}
+                />
+              }
             />
           </Card>
         </Col>
       </Row>
 
       <Row gutter={[24, 24]} style={{ marginTop: '30px' }}>
-          <Col xs={24} lg={12}>
-              <div style={{ ...tableStyle, padding: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                      <Title level={4} style={{ margin: 0, color: '#fff' }}>Recently Added Movies</Title>
-                      <Button type="link" onClick={() => navigate('/admin/movies')} style={{ color: '#f5c518' }}>
-                          View All <ArrowRightOutlined />
-                      </Button>
-                  </div>
-                  <Table 
-                    columns={columnsMovies} 
-                    dataSource={recentMovies} 
-                    rowKey="_id" 
-                    pagination={false} 
-                    size="small"
-                  />
-              </div>
-          </Col>
-          <Col xs={24} lg={12}>
-            <div style={{ ...tableStyle, padding: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                      <Title level={4} style={{ margin: 0, color: '#fff' }}>New Users</Title>
-                      <Button type="link" onClick={() => navigate('/admin/users')} style={{ color: '#f5c518' }}>
-                          View All <ArrowRightOutlined />
-                      </Button>
-                  </div>
-                  <Table 
-                    columns={columnsUsers} 
-                    dataSource={recentUsers} 
-                    rowKey="_id" 
-                    pagination={false} 
-                    size="small"
-                  />
-              </div>
-          </Col>
+        <Col xs={24} lg={12}>
+          <div style={{ ...tableStyle, padding: '20px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '15px',
+              }}
+            >
+              <Title level={4} style={{ margin: 0, color: '#fff' }}>
+                Recently Added Movies
+              </Title>
+              <Button
+                type='link'
+                onClick={() => navigate('/admin/movies')}
+                style={{ color: '#dfb582' }}
+              >
+                View All <ArrowRightOutlined />
+              </Button>
+            </div>
+            <Table
+              columns={columnsMovies}
+              dataSource={recentMovies}
+              rowKey='_id'
+              pagination={false}
+              size='small'
+            />
+          </div>
+        </Col>
+        <Col xs={24} lg={12}>
+          <div style={{ ...tableStyle, padding: '20px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '15px',
+              }}
+            >
+              <Title level={4} style={{ margin: 0, color: '#fff' }}>
+                New Users
+              </Title>
+              <Button
+                type='link'
+                onClick={() => navigate('/admin/users')}
+                style={{ color: '#dfb582' }}
+              >
+                View All <ArrowRightOutlined />
+              </Button>
+            </div>
+            <Table
+              columns={columnsUsers}
+              dataSource={recentUsers}
+              rowKey='_id'
+              pagination={false}
+              size='small'
+            />
+          </div>
+        </Col>
       </Row>
     </div>
   );

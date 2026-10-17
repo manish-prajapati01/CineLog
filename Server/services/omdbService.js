@@ -6,7 +6,7 @@ const axios = require("axios");
 const NodeCache = require("node-cache");
 
 const cache = new NodeCache({ stdTTL: 86400 }); // Cache for 24 hours (data rarely changes)
-const OMDB_BASE_URL = "http://www.omdbapi.com/";
+const OMDB_BASE_URL = "https://www.omdbapi.com/";
 
 const getOmdbData = async (imdbId) => {
   if (!imdbId) return null;

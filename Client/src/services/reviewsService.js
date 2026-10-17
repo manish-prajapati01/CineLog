@@ -23,7 +23,7 @@ export const reviewsAPI = {
   delete: (reviewId) => api.delete(`/reviews/${reviewId}`),
 
   // Get user's reviews
-  getMyReviews: () => api.get('/reviews/user/me'),
+  getMyReviews: () => api.get('/reviews/user/my-reviews'),
 };
 
 export default reviewsAPI;

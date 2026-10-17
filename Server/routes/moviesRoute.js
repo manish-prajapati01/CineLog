@@ -8,7 +8,7 @@ const authMiddlewares = require("../middlewares/authMiddlewares");
 router.post("/add-movie", authMiddlewares, async (req, res) => {
   try {
     req.body.createdBy = req.userId;
-    console.log("req.body", req.body)
+
     await Movie.create(req.body);
     res.status(200).json({ message: "Movie added sucessfully", success: true });
   } catch (error) {
@@ -19,13 +19,13 @@ router.post("/add-movie", authMiddlewares, async (req, res) => {
 //get all movie
 router.get("/", authMiddlewares, async (req, res) => {
   try {
-    const movies = await Movie.find()
+    const movies = await Movie.find({ name: { $exists: true } }).sort({ createdAt: -1 })
       .populate("cast.artist") // Populate nested artist in cast array
       .populate("hero")
       .populate("heroine")
       .populate("director")
       .populate("writer")
-      .populate("createdBy");
+      .populate("createdBy", "name avatar");
     res.status(200).json({ movies, success: true });
   } catch (error) {
     res.status(500).json({ message: error.message, success: false });
@@ -42,7 +42,7 @@ router.get("/:id", authMiddlewares, async (req, res) => {
       .populate("heroine")
       .populate("director")
       .populate("writer")
-      .populate("createdBy");
+      .populate("createdBy", "name avatar");
     res.status(200).json({ data: movie, success: true });
   } catch (error) {
     res.status(500).json({ message: error.message, success: false });

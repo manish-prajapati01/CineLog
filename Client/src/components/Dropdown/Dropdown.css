@@ -2,7 +2,7 @@
 .custom-dropdown-container {
   position: relative;
   min-width: 180px;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Source Sans 3', sans-serif;
   user-select: none;
 }
 
@@ -73,7 +73,7 @@
 }
 
 .custom-dropdown-item.selected {
-  background: rgba(245, 197, 24, 0.1);
+  background: rgba(223, 181, 130, 0.1);
   color: #f5c518;
   font-weight: 600;
 }

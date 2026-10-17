@@ -27,15 +27,15 @@
 
 /* Color variants */
 .rating-circle-wrapper.excellent .rating-progress {
-  stroke: #21d07a;
+  stroke: #8b7966;
 }
 
 .rating-circle-wrapper.good .rating-progress {
-  stroke: #d2d531;
+  stroke: #968370;
 }
 
 .rating-circle-wrapper.average .rating-progress {
-  stroke: #d2d531;
+  stroke: #968370;
 }
 
 .rating-circle-wrapper.poor .rating-progress {

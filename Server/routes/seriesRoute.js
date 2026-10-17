@@ -22,7 +22,7 @@ router.get("/", authMiddlewares, async (req, res) => {
       .populate("hero")
       .populate("heroine")
       .populate("director")
-      .populate("createdBy")
+      .populate("createdBy", "name avatar")
       .sort({ createdAt: -1 });
     res.status(200).json({ data: series, success: true });
   } catch (error) {
@@ -38,7 +38,7 @@ router.get("/:id", authMiddlewares, async (req, res) => {
       .populate("hero")
       .populate("heroine")
       .populate("director")
-      .populate("createdBy");
+      .populate("createdBy", "name avatar");
     res.status(200).json({ data: series, success: true });
   } catch (error) {
     res.status(500).json({ message: error.message, success: false });

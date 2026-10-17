@@ -20,13 +20,14 @@ const corsOptions = {
     "http://localhost:5173", // Local Vite dev server
     "http://localhost:3000", // Alternative local port
     "https://cinelog-p441.onrender.com", // Production Render Server
-    /\.vercel\.app$/, // Any Vercel preview deployment
+    ...(process.env.CLIENT_ORIGIN ? process.env.CLIENT_ORIGIN.split(",") : []),
   ],
   credentials: true,
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-app.use(express.json({ limit: "10mb" }));
+app.use((req, res, next) => { res.set('X-Content-Type-Options', 'nosniff'); res.set('Referrer-Policy', 'strict-origin-when-cross-origin'); next(); });
+app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging (dev only)
@@ -61,8 +62,11 @@ app.use("/api/artists", require("./routes/artistRoutes")); // Admin Artists
 app.use("/api/images", require("./routes/imagesRouter")); // Admin Image Upload
 app.use("/api/users", require("./routes/userRoutes")); // Legacy User/Auth
 
+app.use("/api/discover", require("./routes/discoverRoutes"));
+
 // ============ Health Check ============
 // Simple endpoint to check if server is alive
+app.get('/api/ready', (req, res) => { const ready = require('mongoose').connection.readyState === 1; res.status(ready ? 200 : 503).json({ success: ready, database: ready ? 'connected' : 'unavailable' }); });
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -75,9 +79,10 @@ app.get("/api/health", (req, res) => {
 // Global error handler for all routes
 app.use((err, req, res, next) => {
   console.error("Error:", err.message);
-  res.status(err.status || 500).json({
+  const status = err.status || (err.name === "ValidationError" || err.name === "CastError" || err.code === "LIMIT_FILE_SIZE" ? 400 : 500);
+  res.status(status).json({
     success: false,
-    message: err.message || "Internal Server Error",
+    message: status === 500 && process.env.NODE_ENV === "production" ? "Internal Server Error" : err.message || "Internal Server Error",
   });
 });
 

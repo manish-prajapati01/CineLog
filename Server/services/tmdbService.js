@@ -266,15 +266,7 @@ const discoverTV = async (params = {}) => {
 
   const data = await tmdbRequest("/discover/tv", apiParams);
 
-  // Apply custom filtering for Indian Web Series if needed
-  let results = data.results || [];
-  if (
-    language === "indian" ||
-    language === "south" ||
-    (language && language.includes("hi"))
-  ) {
-    results = filterWebSeries(results);
-  }
+  const results = data.results || [];
 
   return {
     results,
@@ -908,6 +900,7 @@ const clearCache = () => {
 };
 
 module.exports = {
+  getWatchProviders: (type, id) => tmdbRequest(`/${type}/${id}/watch/providers`),
   // Discovery
   discoverMovies,
   discoverTV,

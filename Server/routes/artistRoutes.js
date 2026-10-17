@@ -7,7 +7,7 @@ const authMiddlewares = require("../middlewares/authMiddlewares");
 // router.get('/test-auth', authMiddlewares, (req, res) => {
 //   res.json({ message: 'Authenticated', userId: req.userId });
 // });
-router.post("/add1", async (req, res) => {
+router.post("/add", authMiddlewares, async (req, res) => {
   try {
     req.body.createdBy = req.userId;
     await Artist.create(req.body);

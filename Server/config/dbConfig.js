@@ -14,6 +14,7 @@ if (!uri) {
 }
 
 mongoose.connect(uri, {
+  autoIndex: process.env.NODE_ENV !== "production",
   dbName: "movie-review", // Force specific database name
   serverSelectionTimeoutMS: 10000, // 10 second timeout
 }).catch((err) => {

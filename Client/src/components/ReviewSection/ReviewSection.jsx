@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import moment from 'moment';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
-import './ReviewSection.css';
-
-const ReviewSection = ({
+export default function ReviewSection({
   tmdbId,
   mediaType,
   reviews = [],
@@ -12,228 +9,171 @@ const ReviewSection = ({
   onReviewSubmitted,
   movieTitle,
   posterPath,
-}) => {
-  const navigate = useNavigate();
-  const [isWriting, setIsWriting] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-  // Form State
-  const [formData, setFormData] = useState({
-    content: '',
-    title: '', // optional headline
-    isSpoiler: false,
-  });
-
-  // Spoiler toggle state for INDIVIDUAL reviews (by ID)
-  const [revealedSpoilers, setRevealedSpoilers] = useState({});
-
-  const toggleSpoiler = (reviewId) => {
-    setRevealedSpoilers((prev) => ({
-      ...prev,
-      [reviewId]: !prev[reviewId],
-    }));
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
+}) {
+  const [message, setMessage] = useState('');
+  const [writing, setWriting] = useState(false),
+    [content, setContent] = useState(''),
+    [title, setTitle] = useState(''),
+    [spoiler, setSpoiler] = useState(false),
+    [revealed, setRevealed] = useState({}),
+    [error, setError] = useState(''),
+    [busy, setBusy] = useState(false);
+  async function submit(e) {
     e.preventDefault();
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    if (!formData.content.trim()) return;
-
-    setSubmitting(true);
+    setBusy(true);
+    setMessage('');
     setError('');
-
     try {
-      const payload = {
-        tmdbId: parseInt(tmdbId),
+      await api.post('/reviews', {
+        tmdbId,
         mediaType,
-        content: formData.content,
-        title: formData.title || 'Review',
-        containsSpoilers: formData.isSpoiler,
+        title: title.trim() || 'My thoughts',
+        content,
+        containsSpoilers: spoiler,
         movieTitle,
         posterPath,
-      };
-
-      const res = await api.post('/reviews', payload);
-      // res.data should be the new review
-      if (onReviewSubmitted) {
-        onReviewSubmitted(res.data);
-      }
-
-      // Reset form
-      setFormData({ content: '', title: '', isSpoiler: false });
-      setIsWriting(false);
-    } catch (err) {
-      console.error('Review submit error:', err);
-      setError(err.message || 'Failed to post review.');
+      });
+      setWriting(false);
+      setContent('');
+      setTitle('');
+      setSpoiler(false);
+      onReviewSubmitted();
+      setMessage('Your review activity has been updated.');
+    } catch (e) {
+      setError(e.message);
     } finally {
-      setSubmitting(false);
+      setBusy(false);
     }
-  };
-
+  }
+  async function action(review, method) {
+    setBusy(true);
+    setMessage('');
+    setError('');
+    try {
+      if (method === 'delete') await api.delete(`/reviews/${review._id}`);
+      else await api.put(`/reviews/${review._id}/like`);
+      onReviewSubmitted();
+      setMessage('Your review activity has been updated.');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
-    <div className='reviews-container'>
-      {/* HEADER */}
-      <div className='reviews-header-block'>
-        <div className='header-left'>
-          <span className='reviews-label'>User Reviews</span>
-          <span className='reviews-count'>
-            {reviews?.length > 0 ? reviews.length : 0}
-          </span>
+    <section className='cl-section'>
+      <div className='cl-section-heading'>
+        <div>
+          <p className='cl-eyebrow'>AFTER THE CREDITS</p>
+          <h2>The conversation</h2>
         </div>
-        {!isWriting && (
+        {user ? (
           <button
-            className='btn-write-review'
-            onClick={() => {
-              if (!user) navigate('/login');
-              else setIsWriting(true);
-            }}
+            className='cl-button secondary'
+            onClick={() => setWriting(!writing)}
           >
-            + Write Review
+            {writing ? 'Cancel' : 'Write a review ↗'}
           </button>
+        ) : (
+          <Link className='cl-text-link' to='/login'>
+            Sign in to review ↗
+          </Link>
         )}
       </div>
-
-      {/* WRITE REVIEW FORM */}
-      {isWriting && (
-        <div className='review-form-panel'>
-          <h4>Write a Review for {movieTitle}</h4>
-
-          {error && (
-            <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>
-          )}
-
-          <form onSubmit={handleSubmit}>
+      {message && (
+        <p className='cl-success' role='status'>
+          {message}
+        </p>
+      )}
+      {error && (
+        <p role='alert' className='cl-notice'>
+          {error}
+        </p>
+      )}
+      {writing && (
+        <form className='cl-review-form' onSubmit={submit}>
+          <label>
+            Headline
             <input
-              type='text'
-              name='title'
-              className='review-input-title'
-              placeholder='A short headline... (optional)'
-              value={formData.title}
-              onChange={handleInputChange}
-              disabled={submitting}
+              value={title}
+              maxLength={100}
+              onChange={(e) => setTitle(e.target.value)}
             />
-
+          </label>
+          <label>
+            Your review
             <textarea
-              name='content'
-              className='review-input-content'
-              rows={5}
-              placeholder='Write your thoughts here...'
-              value={formData.content}
-              onChange={handleInputChange}
-              disabled={submitting}
               required
+              minLength={10}
+              maxLength={5000}
+              rows={5}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
             />
-
-            <div className='form-actions-row'>
-              <label className='spoiler-checkbox'>
-                <input
-                  type='checkbox'
-                  name='isSpoiler'
-                  checked={formData.isSpoiler}
-                  onChange={handleInputChange}
-                  disabled={submitting}
-                />
-                Contains Spoilers
-              </label>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type='button'
-                  className='text-btn'
-                  onClick={() => setIsWriting(false)}
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type='submit'
-                  className='btn-submit'
-                  disabled={submitting || !formData.content.trim()}
-                >
-                  {submitting ? 'Posting...' : 'Submit'}
-                </button>
+          </label>
+          <div className='cl-section-heading'>
+            <label className='cl-checkbox'>
+              <input
+                type='checkbox'
+                checked={spoiler}
+                onChange={(e) => setSpoiler(e.target.checked)}
+              />
+              Contains spoilers
+            </label>
+            <button className='cl-button' disabled={busy}>
+              {busy ? 'Publishing...' : 'Publish review'}
+            </button>
+          </div>
+        </form>
+      )}
+      {!reviews.length ? (
+        <div className='cl-empty compact'>
+          <p>No reviews yet. Start the conversation.</p>
+        </div>
+      ) : (
+        <div className='cl-review-grid'>
+          {reviews.map((r) => (
+            <article className='cl-review' key={r._id}>
+              <div className='cl-review-byline'>
+                <span className='cl-avatar'>{r.userId?.name?.[0] || 'C'}</span>
+                <div>
+                  <strong>{r.userId?.name || 'CineLog member'}</strong>
+                  <small>{new Date(r.createdAt).toLocaleDateString()}</small>
+                </div>
               </div>
-            </div>
-          </form>
+              <h3>{r.title}</h3>
+              {r.containsSpoilers && !revealed[r._id] ? (
+                <button
+                  className='cl-spoiler'
+                  onClick={() => setRevealed({ ...revealed, [r._id]: true })}
+                >
+                  Contains spoilers · Reveal review
+                </button>
+              ) : (
+                <p className='cl-review-body'>{r.content}</p>
+              )}
+              <div className='cl-section-heading'>
+                <button
+                  className='cl-text-link'
+                  disabled={!user || busy}
+                  onClick={() => action(r, 'like')}
+                >
+                  ♡ Helpful · {r.likes?.length || 0}
+                </button>
+                {(user?.id === r.userId?._id || user?.role === 'admin') && (
+                  <button
+                    className='cl-quiet'
+                    disabled={busy}
+                    onClick={() => action(r, 'delete')}
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            </article>
+          ))}
         </div>
       )}
-
-      {/* REVIEWS LIST */}
-      <div className='reviews-feed'>
-        {!reviews || reviews.length === 0 ? (
-          <div className='no-reviews-msg'>
-            No reviews yet. Be the first to add one!
-          </div>
-        ) : (
-          reviews.map((rev) => {
-            const isSpoilerBlocked =
-              rev.isSpoiler && !revealedSpoilers[rev._id];
-
-            return (
-              <div key={rev._id} className='review-card-item'>
-                <div className='review-meta-header'>
-                  {rev.title && (
-                    <h5 className='review-title-text'>{rev.title}</h5>
-                  )}
-                  {/* Potentially show user rating if available in review object */}
-                  {rev.authorDetails?.rating && (
-                    <span className='featured-star'>
-                      ★ {rev.authorDetails.rating}
-                    </span>
-                  )}
-                </div>
-
-                <div className='review-author-line'>
-                  <span className='by-text'>by</span>
-                  <Link
-                    to={`/profile/${rev.user?._id || rev.user}`}
-                    className='author-name'
-                  >
-                    {rev.authorName || 'User'}
-                  </Link>
-                  <span className='dot'>•</span>
-                  <span className='review-date'>
-                    {moment(rev.createdAt).format('DD MMMM YYYY')}
-                  </span>
-                </div>
-
-                <div
-                  className={`review-body ${isSpoilerBlocked ? 'spoiler-blur' : ''}`}
-                >
-                  {isSpoilerBlocked && (
-                    <div
-                      className='spoiler-warning'
-                      onClick={() => toggleSpoiler(rev._id)}
-                    >
-                      <span>Warning: Spoilers! (Click to View)</span>
-                    </div>
-                  )}
-                  <p>{rev.content}</p>
-                </div>
-
-                <div className='review-footer-actions'>
-                  <button className='text-btn'>Helpful</button>
-                  {/* Could add Share, Report etc */}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-    </div>
+    </section>
   );
-};
-
-export default ReviewSection;
+}

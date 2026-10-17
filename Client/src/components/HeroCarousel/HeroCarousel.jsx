@@ -87,7 +87,7 @@ const HeroCarousel = ({ items = [] }) => {
         <div className='hero-slide active' key={currentItem.id}>
           <div className='hero-backdrop'>
             <img
-              src={`https://image.tmdb.org/t/p/original${currentItem.backdrop_path || currentItem.backdropPath}`}
+              src={`https://image.tmdb.org/t/p/w1280${currentItem.backdrop_path || currentItem.backdropPath}`}
               alt={currentItem.title || currentItem.name}
             />
             <div className='hero-vignette'></div>
@@ -129,7 +129,7 @@ const HeroCarousel = ({ items = [] }) => {
                 >
                   View Details
                 </Link>
-                <button className='hero-btn-secondary'>+ Watchlist</button>
+                <Link className='hero-btn-secondary' to='/watchlist'>My library</Link>
               </div>
             </div>
           </div>
