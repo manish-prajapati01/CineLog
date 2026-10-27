@@ -1,0 +1,56 @@
+name: Production health and encrypted backup
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+permissions:
+  contents: read
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node Server/scripts/smoke.js
+        env:
+          SMOKE_API_URL: https://cinelog-p441.onrender.com
+          SMOKE_SITE_URL: https://cinelog-two.vercel.app
+  backup:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '17 * * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MONGO_URL: ${{ secrets.BACKUP_MONGO_URL }}
+      BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+    steps:
+      - name: Check backup configuration and daily window
+        id: enabled
+        shell: bash
+        run: |
+          if [ -n "$MONGO_URL" ] && [ -n "$BACKUP_ENCRYPTION_KEY" ] && { [ "$(date -u +%H)" = "02" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; }; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Backup not run: outside the daily window or backup secrets are not configured."
+          fi
+      - uses: actions/checkout@v4
+        if: steps.enabled.outputs.run == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.enabled.outputs.run == 'true'
+        with:
+          node-version: 24
+      - run: npm ci --omit=dev
+        if: steps.enabled.outputs.run == 'true'
+        working-directory: Server
+      - run: node scripts/backup.js backup backup.enc
+        if: steps.enabled.outputs.run == 'true'
+        working-directory: Server
+      - uses: actions/upload-artifact@v4
+        if: steps.enabled.outputs.run == 'true'
+        with:
+          name: encrypted-database-backup
+          path: Server/backup.enc
+          retention-days: 7
+          if-no-files-found: error

@@ -7,15 +7,11 @@ if (!uri) {
   console.error(
     "❌ CRITICAL ERROR: MONGO_URL or MONGO_URI is not defined in environment variables!"
   );
-} else {
-  // Mask password for safe logging
-  const maskedUri = uri.replace(/:([^:@]+)@/, ":****@");
-  console.log(`Connecting to MongoDB at: ${maskedUri}`);
 }
 
 mongoose.connect(uri, {
   autoIndex: process.env.NODE_ENV !== "production",
-  dbName: "movie-review", // Force specific database name
+  dbName: process.env.MONGO_DB_NAME || "movie-review", // Force specific database name
   serverSelectionTimeoutMS: 10000, // 10 second timeout
 }).catch((err) => {
   console.error("❌ MongoDB initial connection error:", err.message);

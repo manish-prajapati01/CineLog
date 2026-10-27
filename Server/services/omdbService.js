@@ -9,7 +9,7 @@ const cache = new NodeCache({ stdTTL: 86400 }); // Cache for 24 hours (data rare
 const OMDB_BASE_URL = "https://www.omdbapi.com/";
 
 const getOmdbData = async (imdbId) => {
-  if (!imdbId) return null;
+  if (!imdbId || !process.env.OMDB_API_KEY) return null;
 
   const cacheKey = `omdb:${imdbId}`;
   const cached = cache.get(cacheKey);

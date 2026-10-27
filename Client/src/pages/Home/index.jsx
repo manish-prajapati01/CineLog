@@ -1,3 +1,6 @@
+import UpcomingPreview from '../../components/UpcomingPreview';
+import Sponsor from '../../components/Sponsor';
+import { languageName } from '../../helpers/languages';
 import Backdrop from '../../components/Backdrop';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -39,6 +42,12 @@ export default function Home() {
   const hero = sections[0][active];
   return (
     <div className='cl-home'>
+      <nav className='cl-discovery-links' aria-label='Explore more'>
+        <Link to='/upcoming'>Coming soon ↗</Link>
+        <Link to='/indian-cinema'>Explore Indian cinema ↗</Link>
+        <Link to='/calendar'>Your calendar ↗</Link>
+        <Link to='/collections'>Your collections ↗</Link>
+      </nav>
       <section className='cl-hero'>
         <Backdrop path={hero?.backdrop_path} />
         <div className='cl-hero-copy'>
@@ -57,6 +66,7 @@ export default function Home() {
                   ★ {Number(hero.vote_average).toFixed(1)} TMDB
                 </span>
                 <span>{hero.release_date?.slice(0, 4)}</span>
+                <span>{languageName(hero.original_language)}</span>
               </>
             )}
             <span>FILM / SERIES / JOURNAL</span>
@@ -168,6 +178,8 @@ export default function Home() {
           linkTo='/movies?sort=vote_average.desc'
         />
       </div>
+      <UpcomingPreview />
+      <Sponsor />
     </div>
   );
 }

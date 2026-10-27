@@ -28,3 +28,6 @@ yarn-error.log*
 
 # Keep local server logs out of future commits
 *.log
+
+.vite-cache/
+*.enc

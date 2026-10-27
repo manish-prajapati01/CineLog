@@ -1,3 +1,10 @@
+import CatalogueNotice from '../../components/CatalogueNotice';
+import CommunityRatings from '../../components/CommunityRatings';
+import LanguageDetails from '../../components/LanguageDetails';
+import {
+  CollectionPicker,
+  EpisodeTracker,
+} from '../../components/PersonalControls';
 import Select from '../../components/Select';
 import { setMeta } from '../../helpers/pageMeta';
 import Backdrop from '../../components/Backdrop';
@@ -17,6 +24,7 @@ export default function TitleDetails({ type = 'movie' }) {
     library = useSelector((s) => s.library.items);
   const [seasonLoading, setSeasonLoading] = useState(false),
     [seasonError, setSeasonError] = useState(''),
+    [seasonCatalogue, setSeasonCatalogue] = useState(null),
     [seasonRetry, setSeasonRetry] = useState(0);
   const [message, setMessage] = useState('');
   const [title, setTitle] = useState(null),
@@ -44,6 +52,7 @@ export default function TitleDetails({ type = 'movie' }) {
           title.overview ||
           'Explore cast, trailers and streaming availability on CineLog.'
         ).slice(0, 160),
+        title,
       );
   }, [title]);
   const saved = library.some(
@@ -125,12 +134,13 @@ export default function TitleDetails({ type = 'movie' }) {
     let live = true;
     setEpisodes([]);
     setSeasonError('');
+    setSeasonCatalogue(null);
     setSeasonLoading(Boolean(season));
     if (season)
       api
         .get(`/tv/${id}/season/${season}`)
         .then((r) => {
-          if (live) setEpisodes(r.data?.episodes || []);
+          if (live) { setEpisodes(r.data?.episodes || []); setSeasonCatalogue(r.data?._catalogue || null); }
         })
         .catch(() => {
           if (live)
@@ -144,7 +154,10 @@ export default function TitleDetails({ type = 'movie' }) {
     };
   }, [id, season, seasonRetry]);
   async function save() {
-    if (!user) return navigate('/login');
+    if (!user)
+      return navigate(
+        `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+      );
     setBusy(true);
     setMessage('');
     setError('');
@@ -156,6 +169,7 @@ export default function TitleDetails({ type = 'movie' }) {
             mediaType: type,
             title: title.title || title.name,
             posterPath: title.poster_path,
+            originalLanguage: title.original_language,
           });
       dispatch(setLibrary(r.data));
       setMessage(
@@ -168,7 +182,10 @@ export default function TitleDetails({ type = 'movie' }) {
     }
   }
   async function rate(value) {
-    if (!user) return navigate('/login');
+    if (!user)
+      return navigate(
+        `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+      );
     setBusy(true);
     setMessage('');
     setError('');
@@ -180,6 +197,7 @@ export default function TitleDetails({ type = 'movie' }) {
           mediaType: type,
           title: title.title || title.name,
           posterPath: title.poster_path,
+          originalLanguage: title.original_language,
           score: Number(value),
         });
       setScore(Number(value));
@@ -243,13 +261,15 @@ export default function TitleDetails({ type = 'movie' }) {
           <div>
             <p className='cl-eyebrow'>
               {type === 'movie' ? 'THE FILM' : 'THE SERIES'} /{' '}
-              {(title.release_date || title.first_air_date || '').slice(0, 4)}
+              {title.release_date ||
+                title.first_air_date ||
+                'Release date to be announced'}
             </p>
             <h1>{name}</h1>
             {title.tagline && <p className='cl-tagline'>{title.tagline}</p>}
             <div className='cl-title-meta'>
               <span className='cl-score'>
-                ★ {Number(title.vote_average).toFixed(1)} <small>TMDB</small>
+                {Number(title.vote_average)>0 ? <>★ {Number(title.vote_average).toFixed(1)} <small>TMDB</small></> : 'Not yet rated'}
               </span>
               {title.runtime > 0 && <span>{title.runtime} min</span>}
               {title.number_of_seasons && (
@@ -257,6 +277,8 @@ export default function TitleDetails({ type = 'movie' }) {
               )}
               <span>{title.certification_code || title.status}</span>
             </div>
+            <CatalogueNotice data={title._catalogue} />
+            <LanguageDetails title={title} type={type} country={country} />
             <div className='cl-tags'>
               {title.genres?.map((g) => (
                 <Link
@@ -311,6 +333,7 @@ export default function TitleDetails({ type = 'movie' }) {
             )}
           </div>
         </div>
+        <CollectionPicker id={id} type={type} />
         <section className='cl-provider-panel'>
           <div>
             <p className='cl-eyebrow'>STREAMING AVAILABILITY</p>
@@ -422,6 +445,7 @@ export default function TitleDetails({ type = 'movie' }) {
                   ))}
               </Select>
             </div>
+            <CatalogueNotice data={seasonCatalogue} />
             {seasonLoading && <p role='status'>Loading episodes...</p>}
             {seasonError && (
               <p className='cl-notice' role='alert'>
@@ -434,20 +458,18 @@ export default function TitleDetails({ type = 'movie' }) {
             {season && !seasonLoading && !seasonError && !episodes.length && (
               <p>No episodes are listed for this season yet.</p>
             )}
-            <div className='cl-episodes'>
-              {episodes.map((e) => (
-                <article key={e.id}>
-                  <span>{String(e.episode_number).padStart(2, '0')}</span>
-                  <div>
-                    <h3>{e.name}</h3>
-                    <p>{e.overview || 'Episode synopsis unavailable.'}</p>
-                  </div>
-                  <small>{e.runtime ? `${e.runtime} min` : e.air_date}</small>
-                </article>
-              ))}
-            </div>
+            {season && !seasonLoading && !seasonError && (
+              <EpisodeTracker id={id} season={season} episodes={episodes} />
+            )}
           </section>
         )}
+        {title._catalogue?.stale && (
+          <p className='cl-notice'>
+            Showing saved catalogue information while the catalogue service is
+            unavailable. Release dates may have changed.
+          </p>
+        )}
+        <CommunityRatings id={id} type={type} refresh={score} />
         <ReviewSection
           tmdbId={Number(id)}
           mediaType={type}

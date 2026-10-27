@@ -68,3 +68,10 @@ test('discovery includes low-vote titles for both movies and series', async () =
   else assert.equal(params.year,'2026');
  }
 });
+
+test('individual ratings are public independently of profile privacy and expose no email',async()=>{
+ const Rating=require('../models/Rating');let projection;
+ const query={select(value){projection=value;return this;},populate(){return this;},sort(){return this;},skip(){return this;},limit(){return this;},lean:async()=>[{_id:'rating',score:8,updatedAt:'2026-01-01',userId:{_id:userId,name:'Member',isActive:true,email:'hidden@example.com'},demographics:{gender:'private'}}]};
+ Rating.find=()=>query;Rating.countDocuments=async()=>1;
+ const r=await request('/ratings/community/42/movie','GET',null,false);assert.equal(r.status,200);assert.equal(r.body.data[0].score,8);assert.equal(r.body.data[0].user.email,undefined);assert.equal(r.body.data[0].demographics,undefined);assert.equal(projection,'score userId updatedAt');assert.equal((await request('/ratings/community/42/person','GET',null,false)).status,400);
+});

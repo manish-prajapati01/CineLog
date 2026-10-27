@@ -1,3 +1,5 @@
+import Sponsor from '../../components/Sponsor';
+import CatalogueNotice from '../../components/CatalogueNotice';
 import Select from '../../components/Select';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -62,6 +64,7 @@ export default function Discover({ type = 'movie' }) {
   }
   return (
     <div className='cl-page cl-top-space'>
+      <CatalogueNotice data={data?._catalogue} />
       <p className='cl-eyebrow'>THE CATALOGUE</p>
       <div className='cl-page-heading'>
         <div>
@@ -245,6 +248,7 @@ export default function Discover({ type = 'movie' }) {
           </button>
         </div>
       )}
+      <Sponsor slot='discovery' />
     </div>
   );
 }

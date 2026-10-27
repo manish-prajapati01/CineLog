@@ -1,3 +1,6 @@
+import SponsorManager from '../../components/SponsorManager';
+import AccountSecurity from '../../components/AccountSecurity';
+import PrivacySettings from '../../components/PrivacySettings';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -123,6 +126,14 @@ export default function Profile() {
           {message}
         </p>
       )}
+      <nav className='cl-feature-links' aria-label='Personal tools'>
+        <Link to='/tracking'>Series progress ↗</Link>
+        <Link to='/calendar'>Release calendar ↗</Link>
+        <Link to='/collections'>Manage collections ↗</Link>
+      </nav>
+      <PrivacySettings userId={user.id} />
+      <AccountSecurity user={user} />
+      {user.role === 'admin' && <SponsorManager />}
       <div className='cl-profile-grid'>
         <section className='cl-panel'>
           <h2>Recently rated</h2>

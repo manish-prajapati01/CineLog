@@ -4,14 +4,6 @@
  */
 
 const axios = require("axios");
-const NodeCache = require("node-cache");
-
-// Cache setup: TTL in seconds
-const cache = new NodeCache({
-  stdTTL: 3600, // 1 hour default
-  checkperiod: 600, // Check for expired keys every 10 minutes
-});
-
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -40,41 +32,31 @@ const IMAGE_SIZES = {
 /**
  * Make authenticated request to TMDB API
  */
-const tmdbRequest = async (endpoint, params = {}) => {
-  const cacheKey = `tmdb:${endpoint}:${JSON.stringify(params)}`;
-  const cached = cache.get(cacheKey);
-  if (cached) return cached;
-
-  let retries = 3;
-  while (retries > 0) {
-    try {
-      const response = await axios.get(`${TMDB_BASE_URL}${endpoint}`, {
-        params: { api_key: process.env.TMDB_API_KEY, ...params },
-        timeout: 10000, // 10s timeout
-      });
-      cache.set(cacheKey, response.data);
-      return response.data;
-    } catch (error) {
-      const isRetryable =
-        !error.response || // Network error
-        (error.response.status >= 500 && error.response.status < 600) || // Server error
-        error.code === "ECONNRESET" ||
-        error.code === "ETIMEDOUT";
-
-      if (isRetryable && retries > 1) {
-        retries--;
-        console.warn(
-          `[TMDB] Retry ${3 - retries}/3 for ${endpoint}: ${error.message}`
-        );
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        continue;
-      }
-
-      console.error(`TMDB API Error: ${endpoint}`, error.message);
-      throw new Error(error.response?.data?.status_message || "TMDB API Error");
-    }
+const catalogueStore=require('./catalogueStore');
+const fallback=require('./catalogueFallback');
+const catalogueRequest = require('./catalogueCache')({store:catalogueStore});
+let failures=0,openUntil=0;
+const tmdbRequest = (endpoint, params = {}) => catalogueRequest(
+ `${endpoint}:${JSON.stringify(params)}`,
+ async () => {
+  if(Date.now()<openUntil){const alternative=await fallback(endpoint).catch(()=>null);if(alternative)return alternative;throw Object.assign(new Error('Catalogue is temporarily unavailable. Please try again.'),{status:503,transient:true});}
+  for(let attempt=0;attempt<3;attempt++) {
+   try {
+    const response=await axios.get(`${TMDB_BASE_URL}${endpoint}`,{params:{api_key:process.env.TMDB_API_KEY,...params},timeout:6000});
+    failures=0;
+    await catalogueStore.remember(endpoint,response.data);
+    return response.data;
+   } catch(error) {
+    const status=error.response?.status;
+    const transient=!status || status===429 || status>=500;
+    if(transient && status!==429 && attempt<2) { await new Promise(resolve=>setTimeout(resolve,500*(attempt+1))); continue; }
+    if(transient){failures++;if(failures>=3)openUntil=Date.now()+30000;const alternative=await fallback(endpoint).catch(()=>null);if(alternative)return alternative;}
+    const failure=new Error(status===404?'Title not found.':'Catalogue is temporarily unavailable. Please try again.');
+    failure.status=status===404?404:503;failure.transient=transient;throw failure;
+   }
   }
-};
+ }, {allowStale:!endpoint.endsWith('/watch/providers')}
+);
 
 const getImageUrl = (path, type = "poster", size = "medium") => {
   if (!path) return null;
@@ -207,6 +189,7 @@ const discoverMovies = async (params = {}) => {
   const data = await tmdbRequest("/discover/movie", apiParams);
 
   return {
+    _catalogue: data._catalogue,
     results: data.results || [],
     page: data.page,
     total_pages: Math.min(data.total_pages || 0, 500),
@@ -269,6 +252,7 @@ const discoverTV = async (params = {}) => {
   const results = data.results || [];
 
   return {
+    _catalogue: data._catalogue,
     results,
     page: data.page,
     total_pages: Math.min(data.total_pages || 0, 500),
@@ -649,6 +633,7 @@ const getUpcomingIndianTV = async (page = 1, filters = {}) => {
     ...filters,
   });
   return {
+    _catalogue: data._catalogue,
     results: data.results || [],
     page: data.page,
     total_pages: data.total_pages,
@@ -895,11 +880,12 @@ const multiSearch = async (query, page = 1) => {
 
 // ============ UTILS ============
 const clearCache = () => {
-  cache.flushAll();
+  catalogueRequest.clear();
   return { message: "Cache cleared" };
 };
 
 module.exports = {
+  getCalendarTitle: (type, id) => tmdbRequest(`/${type}/${id}`),
   getWatchProviders: (type, id) => tmdbRequest(`/${type}/${id}/watch/providers`),
   // Discovery
   discoverMovies,

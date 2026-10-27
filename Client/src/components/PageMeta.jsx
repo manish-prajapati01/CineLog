@@ -2,6 +2,31 @@ import { setMeta } from '../helpers/pageMeta';
 import { useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 const pages = {
+  '/privacy': ['Privacy policy', 'How CineLog handles your account and viewing information.'],
+  '/terms': ['Terms of use', 'Using CineLog and sharing your reviews.'],
+  '/forgot-password': ['Reset your password', 'Recover access to your CineLog account.'],
+  '/reset-password': ['Choose a new password', 'Reset your CineLog password securely.'],
+  '/verify-email': ['Verify your email', 'Verify your CineLog account email.'],
+  '/tracking': [
+    'Series progress',
+    'Track your watched episodes and season progress.',
+  ],
+  '/upcoming': [
+    'Upcoming movies and series',
+    'Explore upcoming film releases and series premieres.',
+  ],
+  '/indian-cinema': [
+    'Explore Indian cinema',
+    'Discover films and series across Indian languages.',
+  ],
+  '/collections': [
+    'Your collections',
+    'Create private or public collections of films and series.',
+  ],
+  '/calendar': [
+    'Your release calendar',
+    'Keep track of releases and episodes from your saved titles.',
+  ],
   '/': [
     'Discover your next great film',
     'Explore films and series, find streaming availability and keep your personal viewing journal with CineLog.',
@@ -38,7 +63,9 @@ const pages = {
 export default function PageMeta() {
   const { pathname, search } = useLocation();
   useLayoutEffect(() => {
-    const dynamic = /^\/(movie|tv|person)\/[^/]+$/.test(pathname);
+    const dynamic =
+      /^\/(movie|tv|person|people)\/[^/]+$/.test(pathname) ||
+      pathname.startsWith('/collections/');
     const page =
       pages[pathname] ||
       (pathname.startsWith('/admin')
@@ -63,10 +90,21 @@ export default function PageMeta() {
       .querySelector('meta[name="robots"]')
       ?.setAttribute(
         'content',
-        (!pages[pathname] && !dynamic) ||
-          ['/profile', '/watchlist', '/search', '/login', '/register'].includes(
-            pathname,
-          )
+        pathname.startsWith('/people/') ||
+          pathname.startsWith('/collections/') ||
+          Boolean(search) ||
+          (!pages[pathname] && !dynamic) ||
+          [
+            '/forgot-password', '/reset-password', '/verify-email',
+            '/profile',
+            '/watchlist',
+            '/search',
+            '/login',
+            '/register',
+            '/calendar',
+            '/tracking',
+            '/collections',
+          ].includes(pathname)
           ? 'noindex,follow'
           : 'index,follow',
       );

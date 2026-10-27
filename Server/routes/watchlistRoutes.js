@@ -11,7 +11,7 @@ router.post('/', async (req, res, next) => {
     const { tmdbId, mediaType, title, posterPath } = req.body;
     if (!valid(tmdbId, mediaType) || typeof title !== 'string' || !title.trim() || title.length > 300) return res.status(400).json({ message: 'A valid title and media type are required' });
     try { await Watchlist.updateOne({ userId: req.userId }, { $setOnInsert: { items: [] } }, { upsert: true }); } catch (e) { if (e.code !== 11000) throw e; }
-    const list = await Watchlist.findOneAndUpdate({ userId: req.userId, items: { $not: { $elemMatch: { tmdbId: Number(tmdbId), mediaType } } } }, { $push: { items: { tmdbId: Number(tmdbId), mediaType, title: title.trim(), posterPath, status: 'planned' } } }, { new: true, runValidators: true });
+    const list = await Watchlist.findOneAndUpdate({ userId: req.userId, items: { $not: { $elemMatch: { tmdbId: Number(tmdbId), mediaType } } } }, { $push: { items: { tmdbId: Number(tmdbId), mediaType, title: title.trim(), posterPath, originalLanguage: typeof req.body.originalLanguage === 'string' ? req.body.originalLanguage.slice(0,8) : undefined, status: 'planned' } } }, { new: true, runValidators: true });
     if (!list) return res.status(409).json({ message: 'Already in your library' });
     res.status(201).json({ success: true, data: list.items });
   } catch (e) { next(e); }

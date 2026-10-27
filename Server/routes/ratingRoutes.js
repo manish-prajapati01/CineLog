@@ -65,6 +65,20 @@ router.post("/", protect, async (req, res) => {
  * @desc    Get rating stats for a movie/TV show
  * @access  Public
  */
+router.get('/community/:tmdbId/:mediaType', async (req,res,next) => {
+ try {
+  const {tmdbId,mediaType}=req.params;
+  if(!/^\d+$/.test(tmdbId)||!Number.isSafeInteger(Number(tmdbId))||Number(tmdbId)<1||!['movie','tv'].includes(mediaType)) return res.status(400).json({success:false,message:'Invalid title'});
+  const page=Math.max(1,Math.min(10000,parseInt(req.query.page)||1)),limit=12;
+  const filter={tmdbId:Number(tmdbId),mediaType};
+  const [rows,total]=await Promise.all([
+   Rating.find(filter).select('score userId updatedAt').populate('userId','name isActive').sort({updatedAt:-1,_id:-1}).skip((page-1)*limit).limit(limit).lean(),
+   Rating.countDocuments(filter)
+  ]);
+  res.json({success:true,data:rows.map(r=>({id:r._id,score:r.score,date:r.updatedAt,user:r.userId?.isActive?{id:r.userId._id,name:r.userId.name}:null})),pagination:{page,pages:Math.ceil(total/limit),total}});
+ } catch(e){next(e);}
+});
+
 router.get("/:tmdbId/:mediaType", async (req, res) => {
   try {
     const { tmdbId, mediaType } = req.params;

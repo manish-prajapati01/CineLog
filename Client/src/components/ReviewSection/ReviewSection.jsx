@@ -75,7 +75,7 @@ export default function ReviewSection({
             {writing ? 'Cancel' : 'Write a review ↗'}
           </button>
         ) : (
-          <Link className='cl-text-link' to='/login'>
+          <Link className='cl-text-link' to={`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`}>
             Sign in to review ↗
           </Link>
         )}
@@ -137,7 +137,13 @@ export default function ReviewSection({
               <div className='cl-review-byline'>
                 <span className='cl-avatar'>{r.userId?.name?.[0] || 'C'}</span>
                 <div>
-                  <strong>{r.userId?.name || 'CineLog member'}</strong>
+                  {r.userId?._id ? (
+                    <Link to={`/people/${r.userId._id}`}>
+                      {r.userId.name || 'CineLog member'}
+                    </Link>
+                  ) : (
+                    <strong>CineLog member</strong>
+                  )}
                   <small>{new Date(r.createdAt).toLocaleDateString()}</small>
                 </div>
               </div>

@@ -1,3 +1,4 @@
+import { languageName } from '../../helpers/languages';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useState } from 'react';
@@ -25,7 +26,10 @@ export default function MovieCard({
   const saved = items.some((i) => i.tmdbId === data.id && i.mediaType === type);
   const rating = Number(data.vote_average || data.voteAverage || 0);
   async function toggle() {
-    if (!user) return navigate('/login');
+    if (!user)
+      return navigate(
+        `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+      );
     setBusy(true);
     setError('');
     setMessage('');
@@ -37,6 +41,7 @@ export default function MovieCard({
             mediaType: type,
             title,
             posterPath: poster,
+            originalLanguage: data.original_language,
           });
       dispatch(setLibrary(result.data));
       setMessage(saved ? 'Removed from library' : 'Saved to library');
@@ -98,6 +103,11 @@ export default function MovieCard({
       <Link className='cl-card-title' to={`/${type}/${data.id}`}>
         {title}
       </Link>
+      {type !== 'person' && (
+        <p className='cl-card-language'>
+          {languageName(data.original_language || data.originalLanguage)}
+        </p>
+      )}
       <span className='cl-sr-only' role='status'>
         {message}
       </span>

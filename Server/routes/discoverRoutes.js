@@ -13,8 +13,15 @@ router.get('/:type', async (req, res, next) => {
         params['air_date.lte'] = `${req.query.year}-12-31`;
       } else params.year = req.query.year;
     }
+    if (req.query.upcoming === 'true') {
+      const today = new Date().toISOString().slice(0,10);
+      delete params.year;
+      delete params['air_date.gte']; delete params['air_date.lte'];
+      params[type === 'movie' ? 'primary_release_date.gte' : 'first_air_date.gte'] = today;
+      params.sort_by = req.query.order === 'date' ? (type === 'movie' ? 'primary_release_date.asc' : 'first_air_date.asc') : 'popularity.desc';
+    }
     if (/^\d+$/.test(req.query.genre || '')) params.with_genres = req.query.genre;
-    if (/^[a-z]{2}$/.test(req.query.language || '')) params.language = req.query.language;
+    if (/^[a-z]{2}$/.test(req.query.language || '') || req.query.language === 'indian') params.language = req.query.language;
     if (Number(req.query.rating) >= 1 && Number(req.query.rating) <= 9) params.vote_average_gte = Number(req.query.rating);
     res.json({ success: true, ...await (type === 'movie' ? tmdb.discoverMovies(params) : tmdb.discoverTV(params)) });
   } catch (error) { next(error); }

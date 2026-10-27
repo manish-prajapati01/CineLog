@@ -15,17 +15,24 @@ export default function Footer() {
           <Link to='/movies'>Movies</Link>
           <Link to='/tv'>Series</Link>
           <Link to='/search'>Search titles</Link>
+          <Link to='/upcoming'>Coming soon</Link>
+          <Link to='/indian-cinema'>Indian cinema</Link>
         </nav>
         <nav aria-label='Your CineLog'>
           <h2>Your CineLog</h2>
           <Link to='/watchlist'>My library</Link>
           <Link to='/profile'>My profile</Link>
+          <Link to='/collections'>Collections</Link>
+          <Link to='/calendar'>Release calendar</Link>
+          <Link to='/tracking'>Series progress</Link>
+          <Link to='/privacy'>Privacy policy</Link>
+          <Link to='/terms'>Terms of use</Link>
         </nav>
       </div>
       <div className='cl-footer-bottom'>
         <p>© {new Date().getFullYear()} CineLog</p>
         <p>
-          Film and series data by <span>TMDB</span>
+          Film and series data by <a href='https://www.themoviedb.org/' target='_blank' rel='noopener noreferrer'>TMDB</a>
           .<br />
           This product is not endorsed or certified by TMDB.
         </p>

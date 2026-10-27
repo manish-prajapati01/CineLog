@@ -21,7 +21,7 @@ router.get("/popular", async (req, res) => {
     const data = await tmdb.getPopularPeople(page);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -40,7 +40,7 @@ router.get("/search", async (req, res) => {
     const data = await tmdb.searchPeople(q, page);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -54,7 +54,7 @@ router.get("/:id", async (req, res) => {
     const data = await tmdb.getPersonDetails(parseInt(id));
     res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -68,7 +68,7 @@ router.get("/:id/credits", async (req, res) => {
     const data = await tmdb.getPersonCredits(parseInt(id));
     res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 

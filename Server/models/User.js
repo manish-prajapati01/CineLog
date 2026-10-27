@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema(
       minlength: [6, "Password must be at least 6 characters"],
       select: false, // Don't include in queries by default
     },
+    sessionVersion: { type: Number, default: 0 },
+    emailVerifiedAt: { type: Date, default: null },
+    passwordResetSentAt: { type: Date, select: false },
+    emailVerificationSentAt: { type: Date, select: false },
+    passwordResetHash: { type: String, select: false },
+    passwordResetExpires: { type: Date, select: false },
+    emailVerificationHash: { type: String, select: false },
+    emailVerificationExpires: { type: Date, select: false },
     avatar: {
       type: String,
       default: null,
@@ -61,7 +69,7 @@ const userSchema = new mongoose.Schema(
 );
 
 // Index for faster queries
-userSchema.index({ email: 1 });
+
 userSchema.index({ role: 1 });
 
 module.exports = mongoose.model("User", userSchema);

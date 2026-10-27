@@ -23,7 +23,7 @@ router.get("/discover", async (req, res) => {
     const data = await tmdb.discoverTV(req.query);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -36,7 +36,7 @@ router.get("/trending", async (req, res) => {
     const shows = await tmdb.getTrendingTV(timeWindow);
     res.json({ success: true, results: shows });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -53,7 +53,7 @@ router.get("/popular", async (req, res) => {
     const data = await tmdb.getPopularTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -71,7 +71,7 @@ router.get("/indian/all", async (req, res) => {
     const data = await tmdb.getAllIndianTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -89,7 +89,7 @@ router.get("/indian/airing", async (req, res) => {
     const data = await tmdb.getAiringIndianTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -107,7 +107,7 @@ router.get("/popular/indian", async (req, res) => {
     const data = await tmdb.getPopularIndianTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -125,7 +125,7 @@ router.get("/indian/upcoming", async (req, res) => {
     const data = await tmdb.getUpcomingIndianTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -140,7 +140,7 @@ router.get("/indian/top_rated", async (req, res) => {
     const data = await tmdb.getTopRatedIndianTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -158,7 +158,7 @@ router.get("/hollywood/all", async (req, res) => {
     const data = await tmdb.getAllHollywoodTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -173,7 +173,7 @@ router.get("/hollywood/airing", async (req, res) => {
     const data = await tmdb.getAiringHollywoodTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -191,7 +191,7 @@ router.get("/popular/hollywood", async (req, res) => {
     const data = await tmdb.getPopularHollywoodTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -209,7 +209,7 @@ router.get("/hollywood/upcoming", async (req, res) => {
     const data = await tmdb.getUpcomingHollywoodTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -224,7 +224,7 @@ router.get("/hollywood/top_rated", async (req, res) => {
     const data = await tmdb.getTopRatedHollywoodTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -241,7 +241,7 @@ router.get("/airing_today", async (req, res) => {
     const data = await tmdb.getAiringTodayTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -258,7 +258,7 @@ router.get("/on_the_air", async (req, res) => {
     const data = await tmdb.getOnTheAirTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -275,7 +275,7 @@ router.get("/top_rated", async (req, res) => {
     const data = await tmdb.getTopRatedTV(parseInt(page), filters);
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -293,7 +293,7 @@ router.get("/search", async (req, res) => {
     const data = await tmdb.searchTV(q, parseInt(page));
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -305,7 +305,7 @@ router.get("/genres", async (req, res) => {
     const genres = await tmdb.getTVGenres();
     res.json({ success: true, genres });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -319,7 +319,7 @@ router.get("/genre/:genreId", async (req, res) => {
     const data = await tmdb.getTVByGenre(parseInt(genreId), parseInt(page));
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -334,7 +334,7 @@ router.get("/:id/credits", async (req, res) => {
     const data = await tmdb.getTVCredits(parseInt(id));
     res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -347,7 +347,7 @@ router.get("/:id/similar", async (req, res) => {
     const data = await tmdb.getSimilarTV(parseInt(id));
     res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -360,7 +360,7 @@ router.get("/:id/videos", async (req, res) => {
     const data = await tmdb.getTVVideos(parseInt(id));
     res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -376,7 +376,7 @@ router.get("/:id/season/:seasonNumber", async (req, res) => {
     );
     res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -415,7 +415,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 

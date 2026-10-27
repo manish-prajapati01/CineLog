@@ -20,6 +20,8 @@ import PageMeta from './components/PageMeta';
 import NotFound from './pages/NotFound';
 
 // Lazy load pages for code splitting
+const Policies = React.lazy(() => import('./pages/Policies'));
+const AccountHelp = React.lazy(() => import('./pages/AccountHelp'));
 const Home = React.lazy(() => import('./pages/Home'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
@@ -32,6 +34,13 @@ const Watchlist = React.lazy(() => import('./pages/Watchlist'));
 const Person = React.lazy(() => import('./pages/Person'));
 const Profile = React.lazy(() => import('./pages/Profile'));
 const Admin = React.lazy(() => import('./pages/Admin'));
+
+const Upcoming = React.lazy(() => import('./pages/Upcoming'));
+const IndianCinema = React.lazy(() => import('./pages/IndianCinema'));
+const Collections = React.lazy(() => import('./pages/Collections'));
+const Tracking = React.lazy(() => import('./pages/Tracking'));
+const Calendar = React.lazy(() => import('./pages/Calendar'));
+const PublicPage = React.lazy(() => import('./pages/PublicPage'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -98,6 +107,67 @@ function App() {
           Skip to content
         </a>
         <Routes>
+          <Route path='/privacy' element={<Layout><Policies /></Layout>} />
+          <Route path='/terms' element={<Layout><Policies terms /></Layout>} />
+          <Route path='/forgot-password' element={<Layout><AccountHelp mode='forgot' /></Layout>} />
+          <Route path='/reset-password' element={<Layout><AccountHelp mode='reset' /></Layout>} />
+          <Route path='/verify-email' element={<Layout><AccountHelp mode='verify' /></Layout>} />
+          <Route
+            path='/tracking'
+            element={
+              <Layout>
+                <Tracking />
+              </Layout>
+            }
+          />
+          <Route
+            path='/upcoming'
+            element={
+              <Layout>
+                <Upcoming />
+              </Layout>
+            }
+          />
+          <Route
+            path='/indian-cinema'
+            element={
+              <Layout>
+                <IndianCinema />
+              </Layout>
+            }
+          />
+          <Route
+            path='/collections'
+            element={
+              <Layout>
+                <Collections />
+              </Layout>
+            }
+          />
+          <Route
+            path='/calendar'
+            element={
+              <Layout>
+                <Calendar />
+              </Layout>
+            }
+          />
+          <Route
+            path='/people/:id'
+            element={
+              <Layout>
+                <PublicPage />
+              </Layout>
+            }
+          />
+          <Route
+            path='/collections/:owner/:id'
+            element={
+              <Layout>
+                <PublicPage collection />
+              </Layout>
+            }
+          />
           {/* Public Routes with Navbar */}
           {/* We wrap these pages with <Layout> so they have the Navbar and Footer */}
           <Route

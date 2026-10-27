@@ -41,6 +41,8 @@ const protect = async (req, res, next) => {
       });
     }
 
+    if ((decoded.sv || 0) !== (user.sessionVersion || 0)) return res.status(401).json({success:false,message:"Session expired. Please sign in again."});
+
     if (!user.isActive) {
       return res.status(401).json({
         success: false,
@@ -75,7 +77,7 @@ const optionalAuth = async (req, res, next) => {
     if (token) {
       const decoded = jwt.verify(token, JWT_SECRET);
       const user = await User.findById(decoded.userId).select("-password");
-      if (user && user.isActive) {
+      if (user && user.isActive && (decoded.sv || 0) === (user.sessionVersion || 0)) {
         req.user = user;
         req.userId = user._id;
       }

@@ -1,3 +1,4 @@
+import { languageName } from '../../helpers/languages';
 import Select from '../../components/Select';
 import useDialog from '../../hooks/useDialog';
 import { useEffect, useMemo, useState } from 'react';
@@ -129,6 +130,11 @@ export default function Library() {
     );
   return (
     <div className='cl-page cl-top-space'>
+      <nav className='cl-feature-links' aria-label='Library tools'>
+        <Link to='/tracking'>Series progress ↗</Link>
+        <Link to='/calendar'>Release calendar ↗</Link>
+        <Link to='/collections'>Shareable collections ↗</Link>
+      </nav>
       <p className='cl-eyebrow'>YOUR COLLECTION</p>
       <div className='cl-page-heading'>
         <div>
@@ -250,6 +256,9 @@ export default function Library() {
                 <Link to={`/${item.mediaType}/${item.tmdbId}`}>
                   <h3>{item.title}</h3>
                 </Link>
+                <p className='cl-card-language'>
+                  {languageName(item.originalLanguage)}
+                </p>
                 {item.watchedAt && (
                   <p className='cl-muted'>
                     Watched {new Date(item.watchedAt).toLocaleDateString()}

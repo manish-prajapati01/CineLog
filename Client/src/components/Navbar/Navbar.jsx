@@ -29,7 +29,8 @@ export default function Navbar() {
   const wasOpen = useRef(open);
   wasOpen.current = open;
   useEffect(() => {
-    if (wasOpen.current) document.getElementById('main-content')?.focus({ preventScroll: true });
+    if (wasOpen.current)
+      document.getElementById('main-content')?.focus({ preventScroll: true });
     setOpen(false);
   }, [location.pathname, location.search]);
   useEffect(() => {
@@ -73,6 +74,11 @@ export default function Navbar() {
     if (user?.id) dispatch(fetchLibrary());
     else dispatch(clearLibrary());
   }, [user?.id, dispatch]);
+  useEffect(() => {
+    const expired = () => { dispatch(logout()); dispatch(clearLibrary()); };
+    window.addEventListener('cinelog:session-expired', expired);
+    return () => window.removeEventListener('cinelog:session-expired', expired);
+  }, [dispatch]);
   useEffect(() => {
     if (localStorage.getItem('token'))
       api
@@ -128,6 +134,7 @@ export default function Navbar() {
                 ↗
               </span>
             </NavLink>
+            <NavLink to='/upcoming'>Coming soon</NavLink>
             <NavLink to='/watchlist'>
               My library
               <span className='cl-nav-arrow' aria-hidden='true'>

@@ -52,7 +52,7 @@ router.get("/multi", async (req, res) => {
       total_results: (tmdbData.total_results || 0) + localResults.length,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -71,7 +71,7 @@ router.get("/movie", async (req, res) => {
     const data = await tmdb.searchMovies(q, parseInt(page));
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -90,7 +90,7 @@ router.get("/tv", async (req, res) => {
     const data = await tmdb.searchTV(q, parseInt(page));
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -109,7 +109,7 @@ router.get("/person", async (req, res) => {
     const data = await tmdb.searchPeople(q, parseInt(page));
     res.json({ success: true, ...data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -123,7 +123,7 @@ router.get("/person/:id", async (req, res) => {
     const person = await tmdb.getPersonDetails(parseInt(id));
     res.json({ success: true, data: person });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -137,7 +137,7 @@ router.get("/person/:id/credits", async (req, res) => {
     const data = await tmdb.getPersonCredits(parseInt(id));
     res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.status || 500).json({ success: false, message: error.message });
   }
 });
 

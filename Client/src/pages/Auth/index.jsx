@@ -1,6 +1,6 @@
 import Logo from '../../components/Logo';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../redux/usersSlice';
 import api from '../../services/api';
@@ -12,6 +12,19 @@ export default function Auth({ register = false }) {
     [error, setError] = useState('');
   const dispatch = useDispatch(),
     navigate = useNavigate();
+  const location = useLocation();
+  const requested = new URLSearchParams(location.search).get('next');
+  let destination = '/';
+  try {
+    const url = new URL(requested || '/', window.location.origin);
+    if (
+      url.origin === window.location.origin &&
+      !['/login', '/register'].includes(url.pathname)
+    )
+      destination = url.pathname + url.search;
+  } catch {
+    /* Keep a safe local destination. */
+  }
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
@@ -24,7 +37,7 @@ export default function Auth({ register = false }) {
       });
       localStorage.setItem('token', r.token);
       dispatch(setUser(r.user));
-      navigate('/');
+      navigate(destination, { replace: true });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -116,9 +129,13 @@ export default function Auth({ register = false }) {
                 : 'Sign in ↗'}
           </button>
         </form>
+        {!register && <Link className='cl-text-link' to='/forgot-password'>Forgot your password?</Link>}
+        {register && <p className='cl-muted'>Read our <Link to='/terms'>Terms</Link> and <Link to='/privacy'>Privacy policy</Link> before creating an account.</p>}
         <small>
           {register ? 'Already have an account?' : 'New here?'}{' '}
-          <Link to={register ? '/login' : '/register'}>
+          <Link
+            to={`${register ? '/login' : '/register'}?next=${encodeURIComponent(destination)}`}
+          >
             {register ? 'Sign in' : 'Create an account'}
           </Link>
         </small>

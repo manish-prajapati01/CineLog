@@ -1,0 +1,28 @@
+name: CineLog checks
+on:
+  push:
+    branches: [update, main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            Server/package-lock.json
+            Client/package-lock.json
+      - run: npm ci
+        working-directory: Server
+      - run: npm run lint && npm test && npm audit --omit=dev --audit-level=high
+        working-directory: Server
+      - run: npm ci
+        working-directory: Client
+      - run: npm run lint && npm run build && npm audit --omit=dev --audit-level=high
+        working-directory: Client

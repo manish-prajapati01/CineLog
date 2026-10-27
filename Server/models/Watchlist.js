@@ -23,6 +23,7 @@ const watchlistItemSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  originalLanguage: { type: String, maxlength: 8 },
   status: { type: String, enum: ['planned', 'watching', 'watched'], default: 'planned' },
   collectionName: { type: String, trim: true, maxlength: 40, default: '' },
   watchedAt: { type: Date, default: null },
@@ -49,7 +50,7 @@ const watchlistSchema = new mongoose.Schema(
 );
 
 // Index for fast lookup
-watchlistSchema.index({ userId: 1 });
+
 
 // Method to check if item exists in watchlist
 watchlistSchema.methods.hasItem = function (tmdbId, mediaType) {

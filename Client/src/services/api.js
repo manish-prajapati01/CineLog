@@ -44,14 +44,12 @@ api.interceptors.response.use(
     // Handle 401 - Unauthorized
     if (
       error.response?.status === 401 &&
+      error.config?.headers?.Authorization === `Bearer ${localStorage.getItem('token')}` &&
       !/\/auth\/(login|register)$/.test(error.config?.url || '')
     ) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Redirect to login if not already there
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+      window.dispatchEvent(new Event('cinelog:session-expired'));
     }
 
     return Promise.reject({ message, status: error.response?.status });

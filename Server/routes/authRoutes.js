@@ -5,7 +5,8 @@
 
 const express = require("express");
 const router = express.Router();
-const authLimit = require('../middlewares/rateLimit')();
+router.use(require('./accountRoutes'));
+const authLimit = require('../middlewares/rateLimit')({namespace:'login'});
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
@@ -32,14 +33,14 @@ router.post("/register", authLimit, async (req, res) => {
       });
     }
 
-    if (name.length < 2) {
+    if (name.trim().length < 2 || name.length > 50 || email.length > 254) {
       return res.status(400).json({
         success: false,
         message: "Name must be at least 2 characters",
       });
     }
 
-    if (password.length < 8 || password.length > 72) {
+    if (password.length < 8 || Buffer.byteLength(password, 'utf8') > 72) {
       return res.status(400).json({
         success: false,
         message: "Password must be 8 to 72 characters",
@@ -49,7 +50,7 @@ router.post("/register", authLimit, async (req, res) => {
     // Check if user exists
     const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
     if (existingUser) {
-      console.log("Registration failed: Email already exists -", email);
+
       return res.status(400).json({
         success: false,
         message: "User with this email already exists",
@@ -67,7 +68,7 @@ router.post("/register", authLimit, async (req, res) => {
     });
 
     // Generate token
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+    const token = jwt.sign({ userId: user._id, sv: user.sessionVersion || 0 }, JWT_SECRET, {
       expiresIn: "7d",
     });
 
@@ -82,10 +83,11 @@ router.post("/register", authLimit, async (req, res) => {
         role: user.role,
         avatar: user.avatar,
         createdAt: user.createdAt,
+        emailVerifiedAt: user.emailVerifiedAt,
       },
     });
   } catch (error) {
-    console.error("Register error:", error);
+    console.error("Register error:", error.name);
     res.status(500).json({
       success: false,
       message: error.message || "Registration failed",
@@ -143,7 +145,7 @@ router.post("/login", authLimit, async (req, res) => {
     await user.save();
 
     // Generate token
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+    const token = jwt.sign({ userId: user._id, sv: user.sessionVersion || 0 }, JWT_SECRET, {
       expiresIn: "7d",
     });
 
@@ -158,10 +160,11 @@ router.post("/login", authLimit, async (req, res) => {
         role: user.role,
         avatar: user.avatar,
         createdAt: user.createdAt,
+        emailVerifiedAt: user.emailVerifiedAt,
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Login error:", error.name);
     res.status(500).json({
       success: false,
       message: error.message || "Login failed",
@@ -186,7 +189,7 @@ router.get("/me", protect, async (req, res) => {
         role: user.role,
         avatar: user.avatar,
         createdAt: user.createdAt,
-        createdAt: user.createdAt,
+        emailVerifiedAt: user.emailVerifiedAt,
       },
     });
   } catch (error) {
@@ -206,6 +209,7 @@ router.put("/profile", protect, async (req, res) => {
   try {
     const { name, avatar } = req.body;
 
+    if(typeof name !== 'string' || name.trim().length < 2 || name.length > 50 || (avatar != null && (typeof avatar !== 'string' || avatar.length > 2000 || !/^https:\/\//.test(avatar)))) return res.status(400).json({success:false,message:'Enter a name of 2–50 characters and a valid HTTPS avatar URL.'});
     const user = await User.findByIdAndUpdate(
       req.userId,
       { name, avatar },
@@ -222,6 +226,7 @@ router.put("/profile", protect, async (req, res) => {
         role: user.role,
         avatar: user.avatar,
         createdAt: user.createdAt,
+        emailVerifiedAt: user.emailVerifiedAt,
       },
     });
   } catch (error) {
